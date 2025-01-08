@@ -10,6 +10,7 @@ const ShopContextProvider = (props) => {
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [cartItems, setCartItems] = useState({});
+  const [confirmDelete, setConfirmDelete] = useState(null);  // Fixed initial state to null
 
   const addToCart = (itemID, size) => {
     if (!size) {
@@ -29,15 +30,36 @@ const ShopContextProvider = (props) => {
     setCartItems(cartData);
   };
 
+  const updateItemQuantity = (itemID, size, quantity) => {
+    if (quantity < 0) {
+      return;
+    }
+    let cartData = structuredClone(cartItems);
+    if (cartData[itemID] && cartData[itemID][size]) {
+      cartData[itemID][size] = quantity;
+    }
+    setCartItems(cartData);
+  };
+
+  const removeItem = (itemID, size) => {
+    const updatedCart = { ...cartItems };
+    if (updatedCart[itemID] && updatedCart[itemID][size]) {
+      delete updatedCart[itemID][size];
+      if (Object.keys(updatedCart[itemID]).length === 0) {
+        delete updatedCart[itemID];
+      }
+      setCartItems(updatedCart);
+    }
+    setConfirmDelete(null);  // Close the modal after item removal
+  };
+
   const getCartCount = () => {
     let totalCount = 0;
     for (const items in cartItems) {
       for (const item in cartItems[items]) {
-        try {
-          if (cartItems[items][item] > 0) {
-            totalCount += cartItems[items][item];
-          }
-        } catch (error) {}
+        if (cartItems[items][item] > 0) {
+          totalCount += cartItems[items][item];
+        }
       }
     }
     return totalCount;
@@ -53,7 +75,11 @@ const ShopContextProvider = (props) => {
     setShowSearch,
     cartItems,
     addToCart,
+    updateItemQuantity,
     getCartCount,
+    confirmDelete,  // Provide the state for modal to use
+    setConfirmDelete,  // Method to control modal
+    removeItem, // Provide removeItem method
   };
 
   return (
