@@ -1,34 +1,28 @@
 import React, { useContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
 import { Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
+import Title from "../components/Title";
 
 const Cart = () => {
   const {
     products,
     currency,
     cartItems,
-    deliveryFee,
-    setCartItems,
     updateItemQuantity,
     confirmDelete,
-    setConfirmDelete,  // New context state for modal
-    removeItem,  // Method to remove item
+    setConfirmDelete,
+    removeItem,
+    coupons,
+    appliedCoupon,
+    applyCoupon,
+    calculateOrderDetails,
   } = useContext(ShopContext);
-  const [cartData, setCartData] = useState([]);
-  const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
-  const [orderDetails, setOrderDetails] = useState({
-    subtotal: 0,
-    discount: 0,
-    total: 0,
-  });
 
-  const MIN_ORDER_VALUE = 500;
-  const coupons = [
-    { code: "NEW125", discount: 125, description: "Get Flat Rs 125 Off on cart value of 500 & Above", minOrder: MIN_ORDER_VALUE },
-    { code: "FREESHIP", discount: deliveryFee, description: "Shipping on us for Your First Purchase", minOrder: 0 },
-  ];
+  const [cartData, setCartData] = useState([]);
+  const [selectedCoupon, setSelectedCoupon] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const tempData = [];
@@ -51,68 +45,51 @@ const Cart = () => {
       }
     }
     setCartData(tempData);
-    updateOrderDetails(tempData, appliedCoupon);
   }, [cartItems, products]);
-
-  const updateOrderDetails = (currentCartData, currentCoupon) => {
-    const subtotal = currentCartData.reduce((total, item) => total + item.price * item.quantity, 0);
-    let discount = 0;
-    if (currentCoupon && subtotal >= currentCoupon.minOrder) {
-      discount = currentCoupon.discount;
-    } else if (currentCoupon) {
-      setAppliedCoupon(null);
-      currentCoupon = null;
-    }
-
-    const shippingFee = currentCoupon?.code === "FREESHIP" ? 0 : deliveryFee;
-    const total = subtotal - discount + shippingFee;
-
-    setOrderDetails({
-      subtotal,
-      discount,
-      shippingFee,
-      total,
-    });
-  };
 
   const handleQuantityChange = (itemId, size, quantity) => {
     if (quantity === 0) {
-      setConfirmDelete({ itemId, size });  // Show the confirmation modal
+      setConfirmDelete({ itemId, size });
     } else {
       updateItemQuantity(itemId, size, quantity);
     }
   };
 
   const handleModalConfirmDelete = () => {
-    removeItem(confirmDelete.itemId, confirmDelete.size);  // Ensure item is removed on confirm
+    if (confirmDelete) {
+      removeItem(confirmDelete.itemId, confirmDelete.size);
+      setConfirmDelete(null); // Close the modal after deletion
+    }
   };
 
+  // Added missing handleModalCancel function
   const handleModalCancel = () => {
-    setConfirmDelete(null);  // Close the modal
+    setConfirmDelete(null);
   };
 
   const handleApplyCoupon = () => {
-    if (!couponCode) {
-      toast.error("Please enter a coupon code");
+    if (!selectedCoupon) {
+      toast.error("Please select a coupon");
       return;
     }
 
-    const coupon = coupons.find((c) => c.code === couponCode.toUpperCase());
-    if (!coupon) {
-      toast.error("Invalid coupon code");
+    if (cartData.length === 0) {
+      toast.error("Cannot apply coupon to empty cart");
       return;
     }
 
-    if (coupon.minOrder > orderDetails.subtotal) {
-      const remaining = coupon.minOrder - orderDetails.subtotal;
-      toast.error(`Add products worth ${currency}${remaining.toFixed(2)} more to apply this coupon`);
-      return;
-    }
-
-    setAppliedCoupon(coupon);
-    updateOrderDetails(cartData, coupon);
-    toast.success("Coupon applied successfully!");
+    applyCoupon(selectedCoupon);
   };
+
+  const handlePlaceOrder = () => {
+    if (cartData.length === 0) {
+      toast.error("Your cart is empty!");
+      return;
+    }
+    navigate("/place-order");
+  };
+
+  const orderDetails = calculateOrderDetails(cartItems);
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -125,21 +102,40 @@ const Cart = () => {
 
             <div className="space-y-0">
               {cartData.map((item) => (
-                <div key={`${item._id}-${item.size}`} className="flex gap-4 py-4 border-b">
-                  <img src={item.image || "/api/placeholder/120/160"} alt={item.name} className="w-24 h-32 object-cover" />
+                <div
+                  key={`${item._id}-${item.size}`}
+                  className="flex gap-4 py-4 border-b"
+                >
+                  <img
+                    src={item.image || "/api/placeholder/120/160"}
+                    alt={item.name}
+                    className="w-24 h-32 object-cover"
+                  />
                   <div className="flex-1">
                     <h3 className="font-medium">{item.name}</h3>
                     <p className="text-sm text-gray-600">Size: {item.size}</p>
                     <div className="flex items-center gap-2 mt-2">
                       <button
-                        onClick={() => handleQuantityChange(item._id, item.size, item.quantity - 1)}
+                        onClick={() =>
+                          handleQuantityChange(
+                            item._id,
+                            item.size,
+                            item.quantity - 1
+                          )
+                        }
                         className="text-xs bg-gray-200 px-2 py-1 rounded"
                       >
                         -
                       </button>
                       <span>{item.quantity}</span>
                       <button
-                        onClick={() => handleQuantityChange(item._id, item.size, item.quantity + 1)}
+                        onClick={() =>
+                          handleQuantityChange(
+                            item._id,
+                            item.size,
+                            item.quantity + 1
+                          )
+                        }
                         className="text-xs bg-gray-200 px-2 py-1 rounded"
                       >
                         +
@@ -147,7 +143,9 @@ const Cart = () => {
                     </div>
                     <button
                       className="mt-2 text-red-600 p-2 hover:bg-red-50 rounded flex items-center gap-2"
-                      onClick={() => removeItem(item._id, item.size)}  // Directly remove item on click
+                      onClick={() =>
+                        setConfirmDelete({ itemId: item._id, size: item.size })
+                      }
                       aria-label="Remove item"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -155,14 +153,23 @@ const Cart = () => {
                     </button>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">{currency}{(item.price * item.quantity).toFixed(2)}</p>
+                    <p className="font-semibold">
+                      {currency}
+                      {(item.price * item.quantity).toFixed(2)}
+                    </p>
                     {item.originalPrice > item.price && (
                       <>
                         <p className="text-sm text-gray-500 line-through">
-                          {currency}{(item.originalPrice * item.quantity).toFixed(2)}
+                          {currency}
+                          {(item.originalPrice * item.quantity).toFixed(2)}
                         </p>
                         <p className="text-green-600 text-sm">
-                          {Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}% OFF
+                          {Math.round(
+                            ((item.originalPrice - item.price) /
+                              item.originalPrice) *
+                              100
+                          )}
+                          % OFF
                         </p>
                       </>
                     )}
@@ -172,7 +179,9 @@ const Cart = () => {
             </div>
 
             {cartData.length === 0 && (
-              <div className="text-center py-8 text-gray-500">Your cart is empty</div>
+              <div className="text-center py-8 text-gray-500">
+                Your cart is empty
+              </div>
             )}
           </div>
         </div>
@@ -183,41 +192,75 @@ const Cart = () => {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Bag total</span>
-                <span>{currency}{orderDetails.subtotal.toFixed(2)}</span>
+                <span>
+                  {currency}
+                  {orderDetails.subtotal.toFixed(2)}
+                </span>
               </div>
               {orderDetails.discount > 0 && (
                 <div className="flex justify-between text-green-600">
-                  <span>Bag discount</span>
-                  <span>- {currency}{orderDetails.discount.toFixed(2)}</span>
+                  <span>Discount</span>
+                  <span>
+                    - {currency}
+                    {orderDetails.discount.toFixed(2)}
+                  </span>
                 </div>
               )}
-              <div className="flex justify-between">
-                <span>Delivery Fee</span>
-                <span>{appliedCoupon?.code === "FREESHIP" ? "FREE" : `${currency}${deliveryFee.toFixed(2)}`}</span>
-              </div>
+              {cartData.length > 0 && (
+                <div className="flex justify-between">
+                  <span>Delivery Fee</span>
+                  <span>
+                    {orderDetails.shippingFee === 0
+                      ? "FREE"
+                      : `${currency}${orderDetails.shippingFee.toFixed(2)}`}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between font-semibold pt-2 border-t">
                 <span>Order Total</span>
-                <span>{currency}{orderDetails.total.toFixed(2)}</span>
+                <span>
+                  {currency}
+                  {orderDetails.total.toFixed(2)}
+                </span>
               </div>
             </div>
 
             <div className="mt-6">
-              <h4 className="font-semibold mb-2">Apply Coupon</h4>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value)}
-                  placeholder="Coupon Code"
-                  className="px-4 py-2 border rounded-lg w-full"
-                />
-                <button
-                  onClick={handleApplyCoupon}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg"
-                >
-                  Apply
-                </button>
+              <h4 className="font-semibold mb-2">Available Coupons</h4>
+              <div className="space-y-2 mb-4">
+                {coupons.map((coupon) => (
+                  <div
+                    key={coupon.code}
+                    className={`p-3 border rounded-lg cursor-pointer ${
+                      selectedCoupon === coupon.code
+                        ? "border-blue-500 bg-blue-50"
+                        : ""
+                    }`}
+                    onClick={() => setSelectedCoupon(coupon.code)}
+                  >
+                    <div className="font-medium">{coupon.code}</div>
+                    <div className="text-sm text-gray-600">
+                      {coupon.description}
+                    </div>
+                  </div>
+                ))}
               </div>
+              <button
+                onClick={handleApplyCoupon}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg mb-4 disabled:bg-blue-300"
+                disabled={cartData.length === 0}
+              >
+                Apply Selected Coupon
+              </button>
+              <button
+                onClick={handlePlaceOrder}
+                className={`w-full px-4 py-2 ${
+                  cartData.length === 0 ? "bg-gray-400" : "bg-green-600"
+                } text-white rounded-lg disabled:bg-gray-300`}
+                disabled={cartData.length === 0}
+              >
+                Place Order
+              </button>
             </div>
           </div>
         </div>
@@ -226,7 +269,9 @@ const Cart = () => {
       {confirmDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-8 rounded-lg shadow-lg">
-            <h3 className="text-lg font-semibold">Are you sure you want to remove this item?</h3>
+            <h3 className="text-lg font-semibold">
+              Are you sure you want to remove this item?
+            </h3>
             <div className="flex gap-4 mt-4">
               <button
                 onClick={handleModalCancel}
