@@ -13,6 +13,7 @@ const PlaceOrder = () => {
     calculateOrderDetails,
     clearCart,
     appliedCoupon,
+    processOrder,
   } = useContext(ShopContext);
 
   const [selectedPayment, setSelectedPayment] = useState("");
@@ -40,35 +41,25 @@ const PlaceOrder = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
+  
     if (!selectedPayment) {
       toast.error("Please select a payment method");
       return;
     }
-
+  
     if (orderDetails.subtotal === 0) {
       toast.error("Your cart is empty!");
       navigate("/cart");
       return;
     }
-
-    // Process the order
-    const orderData = {
-      ...formData,
-      paymentMethod: selectedPayment,
-      orderDetails,
-      appliedCoupon: appliedCoupon?.code,
-    };
-
-    console.log("Order Data:", orderData);
-
-    // Clear cart after successful order
-    clearCart();
-
+  
+    // Process the order using the context function
+    const order = processOrder(formData, selectedPayment);
+  
     // Show success message
     toast.success("Order placed successfully!");
-
-    // Redirect to home
+  
+    // Redirect to orders page
     navigate("/order");
   };
 

@@ -14,6 +14,57 @@ const ShopContextProvider = (props) => {
   const [cartItems, setCartItems] = useState({});
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [orders, setOrders] = useState([]);
+
+  // Process new order and add to orders list
+  const processOrder = (formData, paymentMethod) => {
+    const orderDetails = calculateOrderDetails(cartItems);
+    
+    // Create order items array from cart items
+    const orderItems = [];
+    for (const itemId in cartItems) {
+      for (const size in cartItems[itemId]) {
+        const quantity = cartItems[itemId][size];
+        if (quantity > 0) {
+          const product = products.find(p => p._id === itemId);
+          if (product) {
+            orderItems.push({
+              name: product.name,
+              price: product.price,
+              quantity: quantity,
+              size: size,
+              image: product.image || '/api/placeholder/120/160',
+              status: 'Ready to ship'
+            });
+          }
+        }
+      }
+    }
+
+    // Create new order object
+    const newOrder = {
+      id: Date.now(), // Simple id generation
+      date: new Date().toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      }),
+      items: orderItems,
+      customerInfo: formData,
+      paymentMethod: paymentMethod,
+      orderDetails: orderDetails,
+      appliedCoupon: appliedCoupon?.code
+    };
+
+    // Add to orders list
+    setOrders(prevOrders => [newOrder, ...prevOrders]);
+    
+    // Clear cart after order is processed
+    clearCart();
+    
+    return newOrder;
+  };
+
 
   // Available coupons
   const coupons = [
@@ -170,7 +221,9 @@ const ShopContextProvider = (props) => {
     appliedCoupon,
     applyCoupon,
     calculateOrderDetails,
-    clearCart
+    clearCart,
+    orders,
+    processOrder,
   };
 
   return (

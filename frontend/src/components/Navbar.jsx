@@ -1,55 +1,18 @@
 import React, { useContext, useState } from "react";
 import { assets } from "../assets/assets.js";
-import { NavLink, Link, useNavigate } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext.jsx";
-import { toast } from "react-toastify";
 
 const Navbar = () => {
   const [visible, setVisible] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Add auth state
-  const navigate = useNavigate();
 
-  const { setShowSearch, cartItems, calculateOrderDetails, clearCart } =
+  const { setShowSearch, cartItems, calculateOrderDetails } =
     useContext(ShopContext);
 
   // Get cart count from order details for consistency
   const getCartCount = () => {
     const { itemCount } = calculateOrderDetails(cartItems);
     return itemCount;
-  };
-
-  // Handle user logout
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    clearCart(); // Clear cart on logout
-    toast.success("Logged out successfully");
-    navigate("/");
-  };
-
-  // Handle profile menu actions
-  const handleProfileAction = (action) => {
-    switch (action) {
-      case "profile":
-        if (isLoggedIn) {
-          navigate("/profile");
-        } else {
-          navigate("/login");
-        }
-        break;
-      case "orders":
-        if (isLoggedIn) {
-          navigate("/orders");
-        } else {
-          toast.error("Please login to view orders");
-          navigate("/login");
-        }
-        break;
-      case "logout":
-        handleLogout();
-        break;
-      default:
-        break;
-    }
   };
 
   return (
@@ -115,34 +78,26 @@ const Navbar = () => {
         {/* Profile Dropdown */}
         <div className="group relative">
           <button className="focus:outline-none">
-            <img
-              className="w-5 cursor-pointer"
-              src={assets.profile_icon}
-              alt="Profile"
-            />
+            <Link to='/login'>
+              <img
+                className="w-5 cursor-pointer"
+                src={assets.profile_icon}
+                alt="Profile"
+              />
+            </Link>
           </button>
           <div className="group-hover:block hidden absolute dropdown-menu right-0 pt-4 z-10">
             <div className="flex flex-col gap-2 w-36 py-3 px-5 bg-slate-100 text-gray-500 rounded shadow-lg">
-              <button
-                onClick={() => handleProfileAction("profile")}
-                className="text-left cursor-pointer hover:text-black transition-colors"
-              >
-                {isLoggedIn ? "My Profile" : "Login"}
+              <button className="text-left cursor-pointer hover:text-black transition-colors">
+                My Profile
               </button>
-              <button
-                onClick={() => handleProfileAction("orders")}
-                className="text-left cursor-pointer hover:text-black transition-colors"
-              >
+              <button className="text-left cursor-pointer hover:text-black transition-colors">
                 Orders
               </button>
-              {isLoggedIn && (
-                <button
-                  onClick={() => handleProfileAction("logout")}
-                  className="text-left cursor-pointer hover:text-black transition-colors"
-                >
-                  Logout
-                </button>
-              )}
+
+              <button className="text-left cursor-pointer hover:text-black transition-colors">
+                Logout
+              </button>
             </div>
           </div>
         </div>
