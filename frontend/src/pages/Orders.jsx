@@ -6,7 +6,7 @@ const Orders = () => {
   const { orders, currency } = useContext(ShopContext);
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-6 flex flex-col sm:flex-row gap-1 sm:gap-10 pt-10 border-t">
       <div className="mb-8">
         <h1 className="text-2xl font-medium text-gray-900">MY ORDERS</h1>
         <div className="w-12 h-0.5 bg-gray-900 mt-2"></div>
