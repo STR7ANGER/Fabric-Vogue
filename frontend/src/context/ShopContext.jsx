@@ -1,133 +1,112 @@
-import { createContext, useState } from "react";
-import { products } from "../assets/assets.js";
+import { createContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 export const ShopContext = createContext();
 
 const ShopContextProvider = (props) => {
+  // App Constants
   const currency = "$";
   const deliveryFee = 10;
   const MIN_ORDER_VALUE = 500;
-  
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+  // Shop States
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [cartItems, setCartItems] = useState({});
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [products, setProducts] = useState([]);
 
-  // Process new order and add to orders list
-  const processOrder = (formData, paymentMethod) => {
-    const orderDetails = calculateOrderDetails(cartItems);
-    
-    // Create order items array from cart items
-    const orderItems = [];
-    for (const itemId in cartItems) {
-      for (const size in cartItems[itemId]) {
-        const quantity = cartItems[itemId][size];
-        if (quantity > 0) {
-          const product = products.find(p => p._id === itemId);
-          if (product) {
-            orderItems.push({
-              name: product.name,
-              price: product.price,
-              quantity: quantity,
-              size: size,
-              image: product.image || '/api/placeholder/120/160',
-              status: 'Ready to ship'
-            });
-          }
-        }
-      }
-    }
-
-    // Create new order object
-    const newOrder = {
-      id: Date.now(), // Simple id generation
-      date: new Date().toLocaleDateString('en-US', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      }),
-      items: orderItems,
-      customerInfo: formData,
-      paymentMethod: paymentMethod,
-      orderDetails: orderDetails,
-      appliedCoupon: appliedCoupon?.code
-    };
-
-    // Add to orders list
-    setOrders(prevOrders => [newOrder, ...prevOrders]);
-    
-    // Clear cart after order is processed
-    clearCart();
-    
-    return newOrder;
-  };
-
+  // Auth States
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem("token") || "");
 
   // Available coupons
   const coupons = [
-    { 
-      code: "FLAT200", 
-      discount: 200, 
-      description: "Get Flat $200 Off on cart value of $500 & Above", 
-      minOrder: MIN_ORDER_VALUE 
+    {
+      code: "FLAT200",
+      discount: 200,
+      description: "Get Flat $200 Off on cart value of $500 & Above",
+      minOrder: MIN_ORDER_VALUE,
     },
-    { 
-      code: "FREESHIP", 
-      discount: deliveryFee, 
-      description: "Free Delivery on your order", 
-      minOrder: 0 
+    {
+      code: "FREESHIP",
+      discount: deliveryFee,
+      description: "Free Delivery on your order",
+      minOrder: 0,
     },
   ];
 
-  // Calculate order details with coupon application
-  const calculateOrderDetails = (currentCartItems, coupon = appliedCoupon) => {
-    let subtotal = 0;
-    let itemCount = 0;
-
-    // Calculate totals from cart items
-    for (const itemId in currentCartItems) {
-      for (const size in currentCartItems[itemId]) {
-        const quantity = currentCartItems[itemId][size];
-        if (quantity > 0) {
-          const product = products.find(p => p._id === itemId);
-          if (product) {
-            subtotal += product.price * quantity;
-            itemCount += quantity;
-          }
-        }
-      }
+  // Authentication Functions
+  const login = async (credentials) => {
+    try {
+      const response = await axios.post(
+        `${backendUrl}/api/user/login`,
+        credentials
+      );
+      const { token: newToken, user: userData } = response.data;
+      setToken(newToken);
+      setUser(userData);
+      setIsLoggedIn(true);
+      localStorage.setItem("token", newToken);
+      toast.success("Login successful!");
+    } catch (error) {
+      throw new Error(error.response?.data?.message || "Login failed");
     }
-
-    let discount = 0;
-    let shippingFee = itemCount > 0 ? deliveryFee : 0;
-
-    // Apply coupon if valid
-    if (coupon && subtotal >= coupon.minOrder) {
-      if (coupon.code === "FREESHIP") {
-        shippingFee = 0;
-      } else {
-        discount = coupon.discount;
-      }
-    }
-
-    return {
-      subtotal,
-      discount,
-      shippingFee,
-      total: subtotal - discount + shippingFee,
-      itemCount
-    };
   };
 
+  const signup = async (userData) => {
+    try {
+      const response = await axios.post(
+        `${backendUrl}/api/user/register`,
+        userData
+      );
+      toast.success("Account created successfully!");
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || "Signup failed");
+    }
+  };
+
+  const logout = () => {
+    setToken("");
+    setUser(null);
+    setIsLoggedIn(false);
+    localStorage.removeItem("token");
+    clearCart();
+    toast.success("Logged out successfully");
+  };
+
+  // Auth check on mount and token change
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (token) {
+        try {
+          const response = await axios.get(`${backendUrl}/api/auth/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setUser(response.data.user);
+          setIsLoggedIn(true);
+        } catch (error) {
+          console.error("Auth check failed:", error);
+          logout();
+        }
+      }
+    };
+    checkAuth();
+  }, [token]);
+
+  // Cart Functions
   const addToCart = (itemID, size) => {
     if (!size) {
       toast.error("Select Product Size");
       return;
     }
-    
+
     const cartData = structuredClone(cartItems);
     if (cartData[itemID]) {
       if (cartData[itemID][size]) {
@@ -138,9 +117,10 @@ const ShopContextProvider = (props) => {
     } else {
       cartData[itemID] = { [size]: 1 };
     }
-    
+
     setCartItems(cartData);
     validateCoupon(cartData);
+    toast.success("Product added to cart");
   };
 
   const updateItemQuantity = (itemID, size, quantity) => {
@@ -150,7 +130,7 @@ const ShopContextProvider = (props) => {
     if (cartData[itemID] && cartData[itemID][size]) {
       cartData[itemID][size] = quantity;
     }
-    
+
     setCartItems(cartData);
     validateCoupon(cartData);
   };
@@ -164,22 +144,32 @@ const ShopContextProvider = (props) => {
       }
       setCartItems(updatedCart);
       validateCoupon(updatedCart);
+      toast.success("Product removed from cart");
     }
     setConfirmDelete(null);
   };
 
+  const clearCart = () => {
+    setCartItems({});
+    setAppliedCoupon(null);
+  };
+
+  // Coupon Functions
   const validateCoupon = (currentCartItems) => {
     if (!appliedCoupon) return;
 
     const { subtotal } = calculateOrderDetails(currentCartItems, null);
-    if (subtotal < appliedCoupon.minOrder || Object.keys(currentCartItems).length === 0) {
+    if (
+      subtotal < appliedCoupon.minOrder ||
+      Object.keys(currentCartItems).length === 0
+    ) {
       setAppliedCoupon(null);
       toast.info("Coupon removed due to cart changes");
     }
   };
 
   const applyCoupon = (code) => {
-    const coupon = coupons.find(c => c.code === code);
+    const coupon = coupons.find((c) => c.code === code);
     if (!coupon) {
       toast.error("Invalid coupon");
       return false;
@@ -188,7 +178,11 @@ const ShopContextProvider = (props) => {
     const { subtotal } = calculateOrderDetails(cartItems, null);
     if (subtotal < coupon.minOrder) {
       const remaining = coupon.minOrder - subtotal;
-      toast.error(`Add products worth ${currency}${remaining.toFixed(2)} more to apply this coupon`);
+      toast.error(
+        `Add products worth ${currency}${remaining.toFixed(
+          2
+        )} more to apply this coupon`
+      );
       return false;
     }
 
@@ -197,37 +191,190 @@ const ShopContextProvider = (props) => {
     return true;
   };
 
-  const clearCart = () => {
-    setCartItems({});
-    setAppliedCoupon(null);
+  // Order Functions
+  const calculateOrderDetails = (currentCartItems, coupon = appliedCoupon) => {
+    let subtotal = 0;
+    let itemCount = 0;
+
+    for (const itemId in currentCartItems) {
+      for (const size in currentCartItems[itemId]) {
+        const quantity = currentCartItems[itemId][size];
+        if (quantity > 0) {
+          const product = products.find((p) => p._id === itemId);
+          if (product) {
+            subtotal += product.price * quantity;
+            itemCount += quantity;
+          }
+        }
+      }
+    }
+
+    let discount = 0;
+    let shippingFee = itemCount > 0 ? deliveryFee : 0;
+
+    if (coupon && subtotal >= coupon.minOrder) {
+      if (coupon.code === "FREESHIP") {
+        shippingFee = 0;
+      } else {
+        discount = coupon.discount;
+      }
+    }
+
+    return {
+      subtotal,
+      discount,
+      shippingFee,
+      total: subtotal - discount + shippingFee,
+      itemCount,
+    };
   };
 
-  const value = {
-    products,
+  const processOrder = async (formData, paymentMethod) => {
+    if (!isLoggedIn) {
+      toast.error("Please login to place order");
+      return null;
+    }
+
+    const orderDetails = calculateOrderDetails(cartItems);
+
+    // Create order items array from cart items
+    const orderItems = [];
+    for (const itemId in cartItems) {
+      for (const size in cartItems[itemId]) {
+        const quantity = cartItems[itemId][size];
+        if (quantity > 0) {
+          const product = products.find((p) => p._id === itemId);
+          if (product) {
+            orderItems.push({
+              productId: itemId,
+              name: product.name,
+              price: product.price,
+              quantity: quantity,
+              size: size,
+              image: product.image || "/api/placeholder/120/160",
+              status: "Processing",
+            });
+          }
+        }
+      }
+    }
+
+    // Create new order object
+    const newOrder = {
+      orderDate: new Date().toISOString(),
+      items: orderItems,
+      customerInfo: formData,
+      paymentMethod: paymentMethod,
+      orderDetails: orderDetails,
+      appliedCoupon: appliedCoupon?.code,
+      status: "Pending",
+      userId: user._id,
+    };
+
+    try {
+      const response = await axios.post(`${backendUrl}/api/orders`, newOrder, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // Add to local orders list
+      setOrders((prevOrders) => [response.data, ...prevOrders]);
+
+      // Clear cart after order is processed
+      clearCart();
+
+      toast.success("Order placed successfully!");
+      return response.data;
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to place order");
+      return null;
+    }
+  };
+
+  // Product Functions
+  const getProductsData = async () => {
+    try {
+      const response = await axios.get(`${backendUrl}/api/product/list`);
+      if (response.data) {
+        setProducts(response.data.products);
+      } else {
+        toast.error("Failed to load products");
+      }
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      toast.error("Failed to load products");
+    }
+  };
+
+  // Load products on mount
+  useEffect(() => {
+    getProductsData();
+  }, []);
+
+  // Load user orders if logged in
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (isLoggedIn && token) {
+        try {
+          const response = await axios.get(`${backendUrl}/api/orders/user`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setOrders(response.data);
+        } catch (error) {
+          console.error("Error fetching orders:", error);
+        }
+      }
+    };
+    fetchOrders();
+  }, [isLoggedIn, token]);
+
+  const contextValue = {
+    // App Constants
     currency,
     deliveryFee,
     MIN_ORDER_VALUE,
+    backendUrl,
+
+    // Auth States and Functions
+    isLoggedIn,
+    user,
+    token,
+    setToken,
+    login,
+    signup,
+    logout,
+
+    // Shop States
+    products,
     search,
     setSearch,
     showSearch,
     setShowSearch,
     cartItems,
+    confirmDelete,
+    setConfirmDelete,
+    appliedCoupon,
+    orders,
+
+    // Cart Functions
     addToCart,
     updateItemQuantity,
     removeItem,
-    confirmDelete,
-    setConfirmDelete,
-    coupons,
-    appliedCoupon,
-    applyCoupon,
-    calculateOrderDetails,
     clearCart,
-    orders,
+
+    // Coupon Functions
+    coupons,
+    applyCoupon,
+    validateCoupon,
+
+    // Order Functions
+    calculateOrderDetails,
     processOrder,
   };
 
   return (
-    <ShopContext.Provider value={value}>{props.children}</ShopContext.Provider>
+    <ShopContext.Provider value={contextValue}>
+      {props.children}
+    </ShopContext.Provider>
   );
 };
 

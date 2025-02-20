@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
 import { Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
-import Title from "../components/Title";
+
 
 const Cart = () => {
   const {

@@ -3,10 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShopContext } from '../context/ShopContext';
 import { toast } from 'react-toastify';
 
-const Login = () => {
+const SignUp = () => {
   const navigate = useNavigate();
-  const { login } = useContext(ShopContext);
+  const { signup } = useContext(ShopContext);
   const [formData, setFormData] = useState({
+    name: '',
     email: '',
     password: ''
   });
@@ -21,18 +22,33 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await login(formData);
-      navigate('/');
+      await signup(formData);
+      navigate('/login');
     } catch (error) {
-      toast.error(error.message || 'Login failed');
+      toast.error(error.message || 'Signup failed');
     }
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">
-        <h1 className="text-2xl font-semibold text-center mb-6">Welcome Back</h1>
+        <h1 className="text-2xl font-semibold text-center mb-6">Create Account</h1>
         <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label htmlFor="name" className="block text-gray-700">
+              Full Name
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="John Doe"
+              required
+              className="w-full p-2 border border-gray-300 rounded mt-2"
+            />
+          </div>
           <div className="mb-4">
             <label htmlFor="email" className="block text-gray-700">
               Email Address
@@ -62,12 +78,9 @@ const Login = () => {
               required
               className="w-full p-2 border border-gray-300 rounded mt-2"
             />
-            <div className="flex justify-between mt-2 text-sm">
-              <Link to="/forgot-password" className="text-gray-600 hover:text-black">
-                Forgot password?
-              </Link>
-              <Link to="/signup" className="text-gray-600 hover:text-black">
-                Create an account
+            <div className="mt-2 text-sm text-right">
+              <Link to="/login" className="text-gray-600 hover:text-black">
+                Already have an account?
               </Link>
             </div>
           </div>
@@ -75,7 +88,7 @@ const Login = () => {
             type="submit"
             className="w-full p-2 bg-black text-white rounded hover:bg-gray-800"
           >
-            Login
+            Sign Up
           </button>
         </form>
       </div>
@@ -83,4 +96,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default SignUp;

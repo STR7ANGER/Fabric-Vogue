@@ -1,18 +1,30 @@
 import React, { useContext, useState } from "react";
 import { assets } from "../assets/assets.js";
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useNavigate } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext.jsx";
 
 const Navbar = () => {
   const [visible, setVisible] = useState(false);
+  const navigate = useNavigate();
 
-  const { setShowSearch, cartItems, calculateOrderDetails } =
-    useContext(ShopContext);
+  const {
+    setShowSearch,
+    cartItems,
+    calculateOrderDetails,
+    isLoggedIn,
+    user,
+    logout,
+  } = useContext(ShopContext);
 
   // Get cart count from order details for consistency
   const getCartCount = () => {
     const { itemCount } = calculateOrderDetails(cartItems);
     return itemCount;
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
   };
 
   return (
@@ -63,6 +75,7 @@ const Navbar = () => {
 
       {/* Right Icons Section */}
       <div className="flex items-center gap-6">
+        {/* Search Button */}
         <button
           onClick={() => setShowSearch(true)}
           className="focus:outline-none"
@@ -77,29 +90,51 @@ const Navbar = () => {
 
         {/* Profile Dropdown */}
         <div className="group relative">
-          <button className="focus:outline-none">
-            <Link to='/login'>
+          {isLoggedIn ? (
+            <button className="focus:outline-none">
               <img
                 className="w-5 cursor-pointer"
                 src={assets.profile_icon}
                 alt="Profile"
               />
+            </button>
+          ) : (
+            <Link to="/login">
+              <img
+                className="w-5 cursor-pointer"
+                src={assets.profile_icon}
+                alt="Login"
+              />
             </Link>
-          </button>
-          <div className="group-hover:block hidden absolute dropdown-menu right-0 pt-4 z-10">
-            <div className="flex flex-col gap-2 w-36 py-3 px-5 bg-slate-100 text-gray-500 rounded shadow-lg">
-              <button className="text-left cursor-pointer hover:text-black transition-colors">
-                My Profile
-              </button>
-              <button className="text-left cursor-pointer hover:text-black transition-colors">
-                Orders
-              </button>
+          )}
 
-              <button className="text-left cursor-pointer hover:text-black transition-colors">
-                Logout
-              </button>
+          {isLoggedIn && (
+            <div className="group-hover:block hidden absolute dropdown-menu right-0 pt-4 z-10">
+              <div className="flex flex-col gap-2 w-36 py-3 px-5 bg-slate-100 text-gray-500 rounded shadow-lg">
+                <div className="text-black font-medium border-b pb-2">
+                  {user?.name}
+                </div>
+                <Link
+                  to="/profile"
+                  className="text-left cursor-pointer hover:text-black transition-colors"
+                >
+                  My Profile
+                </Link>
+                <Link
+                  to="/orders"
+                  className="text-left cursor-pointer hover:text-black transition-colors"
+                >
+                  Orders
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-left cursor-pointer hover:text-black transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Cart Link */}
@@ -144,6 +179,7 @@ const Navbar = () => {
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex flex-col text-gray-600">
+            {/* Mobile Menu Header */}
             <div
               onClick={() => setVisible(false)}
               className="flex items-center gap-4 p-4 cursor-pointer border-b"
@@ -156,6 +192,7 @@ const Navbar = () => {
               <p>Back</p>
             </div>
 
+            {/* Mobile Menu Links */}
             <NavLink
               onClick={() => setVisible(false)}
               className={({ isActive }) =>
@@ -192,6 +229,46 @@ const Navbar = () => {
             >
               CONTACT
             </NavLink>
+
+            {/* Mobile Menu User Section */}
+            {isLoggedIn ? (
+              <>
+                <div className="py-3 px-6 border-b text-black font-medium">
+                  {user?.name}
+                </div>
+                <Link
+                  to="/profile"
+                  className="py-3 px-6 border-b"
+                  onClick={() => setVisible(false)}
+                >
+                  My Profile
+                </Link>
+                <Link
+                  to="/orders"
+                  className="py-3 px-6 border-b"
+                  onClick={() => setVisible(false)}
+                >
+                  Orders
+                </Link>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setVisible(false);
+                  }}
+                  className="py-3 px-6 border-b text-left w-full"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                className="py-3 px-6 border-b"
+                onClick={() => setVisible(false)}
+              >
+                Login
+              </Link>
+            )}
           </div>
         </div>
       </div>
