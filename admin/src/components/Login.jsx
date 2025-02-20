@@ -2,10 +2,16 @@ import React from "react";
 import axios from "axios";
 import { useState } from "react";
 import { backendUrl } from "../App.jsx";
+import { toast } from "react-toastify";
 
 const Login = ({ setToken }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const clearForm = () => {
+    setEmail("");
+    setPassword("");
+  };
 
   const onSubmitHandler = async (e) => {
     try {
@@ -15,13 +21,17 @@ const Login = ({ setToken }) => {
         password,
       });
       if (response.data.success) {
+        toast.success("Login successful!");
         setToken(response.data.token);
+        clearForm();
       } else {
-        toast.error(response.data.message);
+        toast.error(response.data.message || "Invalid credentials");
+        clearForm();
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.message);
+      toast.error(error.response?.data?.message || "Invalid credentials");
+      clearForm();
     }
   };
 
