@@ -1,38 +1,42 @@
-import React, { useState, useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ShopContext } from '../context/ShopContext';
-import { toast } from 'react-toastify';
+import React, { useState, useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ShopContext } from "../context/ShopContext";
+import { toast } from "react-toastify";
 
 const SignUp = () => {
   const navigate = useNavigate();
   const { signup } = useContext(ShopContext);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: ''
+    name: "",
+    email: "",
+    password: "",
   });
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await signup(formData);
-      navigate('/login');
+      const response = await signup(formData);
+      if (response.success) {
+        navigate("/login");
+      }
     } catch (error) {
-      toast.error(error.message || 'Signup failed');
+      console.error("Signup error:", error);
     }
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">
-        <h1 className="text-2xl font-semibold text-center mb-6">Create Account</h1>
+        <h1 className="text-2xl font-semibold text-center mb-6">
+          Create Account
+        </h1>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label htmlFor="name" className="block text-gray-700">

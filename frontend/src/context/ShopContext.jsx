@@ -48,14 +48,22 @@ const ShopContextProvider = (props) => {
         `${backendUrl}/api/user/login`,
         credentials
       );
-      const { token: newToken, user: userData } = response.data;
-      setToken(newToken);
-      setUser(userData);
-      setIsLoggedIn(true);
-      localStorage.setItem("token", newToken);
-      toast.success("Login successful!");
+
+      if (response.data.sucess) {
+        const { token } = response.data;
+        localStorage.setItem("token", token);
+        setToken(token);
+        setIsLoggedIn(true);
+        toast.success(response.data.message || "Login successful!");
+        return true;
+      } else {
+        toast.error(response.data.message);
+        return false;
+      }
     } catch (error) {
-      throw new Error(error.response?.data?.message || "Login failed");
+      const errorMessage = error.response?.data?.message || "Login failed";
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
     }
   };
 
@@ -65,10 +73,24 @@ const ShopContextProvider = (props) => {
         `${backendUrl}/api/user/register`,
         userData
       );
-      toast.success("Account created successfully!");
-      return response.data;
+      if (response.data.sucess === true && response.data.token) {
+        toast.success("Account created successfully!");
+        return {
+          success: true,
+          token: response.data.token,
+        };
+      }
+      if (response.data.sucess === false) {
+        toast.error(response.data.message);
+        return {
+          success: false,
+          message: response.data.message,
+        };
+      }
     } catch (error) {
-      throw new Error(error.response?.data?.message || "Signup failed");
+      const errorMessage = error.response?.data?.message || "Signup failed";
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
     }
   };
 
@@ -81,23 +103,12 @@ const ShopContextProvider = (props) => {
     toast.success("Logged out successfully");
   };
 
-  // Auth check on mount and token change
   useEffect(() => {
-    const checkAuth = async () => {
-      if (token) {
-        try {
-          const response = await axios.get(`${backendUrl}/api/auth/me`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          setUser(response.data.user);
-          setIsLoggedIn(true);
-        } catch (error) {
-          console.error("Auth check failed:", error);
-          logout();
-        }
-      }
-    };
-    checkAuth();
+    const savedToken = localStorage.getItem("token");
+    if (savedToken) {
+      setToken(savedToken);
+      setIsLoggedIn(true);
+    }
   }, [token]);
 
   // Cart Functions
@@ -258,36 +269,6 @@ const ShopContextProvider = (props) => {
         }
       }
     }
-
-    // Create new order object
-    const newOrder = {
-      orderDate: new Date().toISOString(),
-      items: orderItems,
-      customerInfo: formData,
-      paymentMethod: paymentMethod,
-      orderDetails: orderDetails,
-      appliedCoupon: appliedCoupon?.code,
-      status: "Pending",
-      userId: user._id,
-    };
-
-    try {
-      const response = await axios.post(`${backendUrl}/api/orders`, newOrder, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      // Add to local orders list
-      setOrders((prevOrders) => [response.data, ...prevOrders]);
-
-      // Clear cart after order is processed
-      clearCart();
-
-      toast.success("Order placed successfully!");
-      return response.data;
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to place order");
-      return null;
-    }
   };
 
   // Product Functions
@@ -309,23 +290,6 @@ const ShopContextProvider = (props) => {
   useEffect(() => {
     getProductsData();
   }, []);
-
-  // Load user orders if logged in
-  useEffect(() => {
-    const fetchOrders = async () => {
-      if (isLoggedIn && token) {
-        try {
-          const response = await axios.get(`${backendUrl}/api/orders/user`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          setOrders(response.data);
-        } catch (error) {
-          console.error("Error fetching orders:", error);
-        }
-      }
-    };
-    fetchOrders();
-  }, [isLoggedIn, token]);
 
   const contextValue = {
     // App Constants
