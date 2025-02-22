@@ -121,7 +121,7 @@ const Navbar = () => {
                   My Profile
                 </Link>
                 <Link
-                  to="/orders"
+                  to="/order"
                   className="text-left cursor-pointer hover:text-black transition-colors"
                 >
                   Orders

@@ -269,6 +269,25 @@ const ShopContextProvider = (props) => {
         }
       }
     }
+
+    // Create new order object
+    const newOrder = {
+      id: `ORD${Date.now()}`,
+      date: new Date().toLocaleDateString(),
+      items: orderItems,
+      orderDetails: orderDetails,
+      shippingAddress: formData,
+      paymentMethod: paymentMethod,
+      appliedCoupon: appliedCoupon?.code || null,
+    };
+
+    // Add the new order to orders state
+    setOrders((prevOrders) => [...prevOrders, newOrder]);
+
+    // Clear the cart after successful order
+    clearCart();
+
+    return newOrder;
   };
 
   // Product Functions
