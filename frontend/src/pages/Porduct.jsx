@@ -54,11 +54,7 @@ const Product = () => {
       });
 
       if (response.data.success) {
-        if (response.data.cartData) {
-          setCartItems(response.data.cartData);
-        } else {
-          await getCartData();
-        }
+        getCartData();
         toast.success(response.data.message || "Added to cart");
       } else {
         toast.error(response.data.message || "Failed to add to cart");
