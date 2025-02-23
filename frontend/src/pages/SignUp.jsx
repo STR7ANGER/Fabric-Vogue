@@ -2,10 +2,11 @@ import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 const SignUp = () => {
   const navigate = useNavigate();
-  const { signup } = useContext(ShopContext);
+  const { setIsLoggedIn } = useContext(ShopContext);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -22,11 +23,22 @@ const SignUp = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await signup(formData);
-      if (response.success) {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/user/register`,
+        formData
+      );
+
+      if (response.data.sucess === true && response.data.token) {
+        toast.success("Account created successfully!");
         navigate("/login");
       }
+
+      if (response.data.sucess === false) {
+        toast.error(response.data.message);
+      }
     } catch (error) {
+      const errorMessage = error.response?.data?.message || "Signup failed";
+      toast.error(errorMessage);
       console.error("Signup error:", error);
     }
   };

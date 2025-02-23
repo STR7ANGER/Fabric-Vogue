@@ -3,27 +3,38 @@ import { useNavigate } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
 import { Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
-
+import axios from "axios";
 
 const Cart = () => {
   const {
     products,
     currency,
     cartItems,
-    updateItemQuantity,
+    backendUrl,
+    token,
+    isLoggedIn,
     confirmDelete,
     setConfirmDelete,
-    removeItem,
     coupons,
     appliedCoupon,
     applyCoupon,
     calculateOrderDetails,
+    getCartData,
   } = useContext(ShopContext);
 
   const [cartData, setCartData] = useState([]);
   const [selectedCoupon, setSelectedCoupon] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Load cart data when component mounts
+  useEffect(() => {
+    if (isLoggedIn) {
+      getCartData();
+    }
+  }, [isLoggedIn]);
+
+  // Process cart items into display format
   useEffect(() => {
     const tempData = [];
     for (const itemId in cartItems) {
@@ -47,27 +58,120 @@ const Cart = () => {
     setCartData(tempData);
   }, [cartItems, products]);
 
-  const handleQuantityChange = (itemId, size, quantity) => {
+  const handleQuantityChange = async (itemId, size, quantity) => {
+    if (!isLoggedIn) {
+      toast.error("Please login to update cart");
+      navigate("/login");
+      return;
+    }
+
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      toast.error("Session expired. Please login again");
+      navigate("/login");
+      return;
+    }
+
     if (quantity === 0) {
       setConfirmDelete({ itemId, size });
-    } else {
-      updateItemQuantity(itemId, size, quantity);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        `${backendUrl}/api/cart/update`,
+        {
+          userId,
+          itemId,
+          size,
+          quantity,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        await getCartData();
+        toast.success("Cart updated successfully");
+      } else {
+        toast.error(response.data.message || "Failed to update cart");
+      }
+    } catch (error) {
+      console.error("Update cart error:", error);
+      if (error.response?.status === 401) {
+        toast.error("Session expired. Please login again");
+        navigate("/login");
+      } else {
+        toast.error(error.response?.data?.message || "Failed to update cart");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleModalConfirmDelete = () => {
+  const handleModalConfirmDelete = async () => {
+    if (!isLoggedIn) {
+      toast.error("Please login to remove items");
+      navigate("/login");
+      return;
+    }
+
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      toast.error("Session expired. Please login again");
+      navigate("/login");
+      return;
+    }
+
     if (confirmDelete) {
-      removeItem(confirmDelete.itemId, confirmDelete.size);
-      setConfirmDelete(null); // Close the modal after deletion
+      setLoading(true);
+      try {
+        const response = await axios.post(
+          `${backendUrl}/api/cart/update`,
+          {
+            userId,
+            itemId: confirmDelete.itemId,
+            size: confirmDelete.size,
+            quantity: 0,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (response.data.success) {
+          await getCartData();
+          toast.success("Item removed from cart");
+        } else {
+          toast.error(response.data.message || "Failed to remove item");
+        }
+      } catch (error) {
+        console.error("Remove item error:", error);
+        toast.error(error.response?.data?.message || "Failed to remove item");
+      } finally {
+        setLoading(false);
+        setConfirmDelete(null);
+      }
     }
   };
 
-  // Added missing handleModalCancel function
   const handleModalCancel = () => {
     setConfirmDelete(null);
   };
 
   const handleApplyCoupon = () => {
+    if (!isLoggedIn) {
+      toast.error("Please login to apply coupons");
+      navigate("/login");
+      return;
+    }
+
     if (!selectedCoupon) {
       toast.error("Please select a coupon");
       return;
@@ -82,6 +186,12 @@ const Cart = () => {
   };
 
   const handlePlaceOrder = () => {
+    if (!isLoggedIn) {
+      toast.error("Please login to place order");
+      navigate("/login");
+      return;
+    }
+
     if (cartData.length === 0) {
       toast.error("Your cart is empty!");
       return;
@@ -94,10 +204,12 @@ const Cart = () => {
   return (
     <div className="max-w-6xl mx-auto p-4 flex flex-col sm:flex-row gap-1 sm:gap-10 pt-10 border-t">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Cart Items Section */}
         <div className="lg:col-span-2">
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">
-              My Bag ({cartData.length} {cartData.length === 1 ? "item" : "items"})
+              My Bag ({cartData.length}{" "}
+              {cartData.length === 1 ? "item" : "items"})
             </h2>
 
             <div className="space-y-0">
@@ -107,7 +219,7 @@ const Cart = () => {
                   className="flex gap-4 py-4 border-b"
                 >
                   <img
-                    src={item.image || "/api/placeholder/120/160"}
+                    src={item.image?.[0] || "/api/placeholder/120/160"}
                     alt={item.name}
                     className="w-24 h-32 object-cover"
                   />
@@ -123,7 +235,8 @@ const Cart = () => {
                             item.quantity - 1
                           )
                         }
-                        className="text-xs bg-gray-200 px-2 py-1 rounded"
+                        disabled={loading}
+                        className="text-xs bg-gray-200 px-2 py-1 rounded disabled:bg-gray-100"
                       >
                         -
                       </button>
@@ -136,16 +249,18 @@ const Cart = () => {
                             item.quantity + 1
                           )
                         }
-                        className="text-xs bg-gray-200 px-2 py-1 rounded"
+                        disabled={loading}
+                        className="text-xs bg-gray-200 px-2 py-1 rounded disabled:bg-gray-100"
                       >
                         +
                       </button>
                     </div>
                     <button
-                      className="mt-2 text-red-600 p-2 hover:bg-red-50 rounded flex items-center gap-2"
+                      className="mt-2 text-red-600 p-2 hover:bg-red-50 rounded flex items-center gap-2 disabled:opacity-50"
                       onClick={() =>
                         setConfirmDelete({ itemId: item._id, size: item.size })
                       }
+                      disabled={loading}
                       aria-label="Remove item"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -186,6 +301,7 @@ const Cart = () => {
           </div>
         </div>
 
+        {/* Order Summary Section */}
         <div>
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="font-semibold mb-4">Order Details</h3>
@@ -225,6 +341,7 @@ const Cart = () => {
               </div>
             </div>
 
+            {/* Coupons Section */}
             <div className="mt-6">
               <h4 className="font-semibold mb-2">Available Coupons</h4>
               <div className="space-y-2 mb-4">
@@ -248,7 +365,7 @@ const Cart = () => {
               <button
                 onClick={handleApplyCoupon}
                 className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg mb-4 disabled:bg-blue-300"
-                disabled={cartData.length === 0}
+                disabled={cartData.length === 0 || loading || !isLoggedIn}
               >
                 Apply Selected Coupon
               </button>
@@ -257,7 +374,7 @@ const Cart = () => {
                 className={`w-full px-4 py-2 ${
                   cartData.length === 0 ? "bg-gray-400" : "bg-green-600"
                 } text-white rounded-lg disabled:bg-gray-300`}
-                disabled={cartData.length === 0}
+                disabled={cartData.length === 0 || loading}
               >
                 Place Order
               </button>
@@ -266,8 +383,9 @@ const Cart = () => {
         </div>
       </div>
 
+      {/* Delete Confirmation Modal */}
       {confirmDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg shadow-lg">
             <h3 className="text-lg font-semibold">
               Are you sure you want to remove this item?
@@ -275,15 +393,17 @@ const Cart = () => {
             <div className="flex gap-4 mt-4">
               <button
                 onClick={handleModalCancel}
-                className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-200"
+                disabled={loading}
+                className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-200 disabled:bg-gray-100"
               >
                 Cancel
               </button>
               <button
                 onClick={handleModalConfirmDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                disabled={loading}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-red-400"
               >
-                Continue
+                {loading ? "Removing..." : "Continue"}
               </button>
             </div>
           </div>

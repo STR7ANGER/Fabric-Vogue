@@ -3,13 +3,18 @@ import { useParams } from "react-router-dom";
 import { ShopContext } from "./../context/ShopContext";
 import { assets } from "../assets/assets";
 import RelatedProducts from "./RelatedProducts";
+import { toast } from "react-toastify";
+import axios from "axios";
 
 const Product = () => {
   const { productId } = useParams();
-  const { products, currency,addToCart } = useContext(ShopContext);
+  const { products, currency, backendUrl, token, isLoggedIn, getCartData } =
+    useContext(ShopContext);
+
   const [productData, setProductData] = useState(null);
   const [image, setImage] = useState("");
   const [size, setSize] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (products?.length && productId) {
@@ -20,6 +25,54 @@ const Product = () => {
       }
     }
   }, [productId, products]);
+
+  const handleAddToCart = async () => {
+    if (!isLoggedIn) {
+      toast.error("Please login to add items to cart");
+      return;
+    }
+
+    if (!size) {
+      toast.error("Please select a size");
+      return;
+    }
+
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      toast.error("Session expired. Please login again");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await axios.post(
+        `${backendUrl}/api/cart/add`,
+        {
+          userId: userId, // Use userId from localStorage instead of user._id
+          itemId: productId,
+          size: size,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        toast.success(response.data.message || "Added to cart");
+        // Refresh cart data after successful addition
+        await getCartData();
+      } else {
+        toast.error(response.data.message || "Failed to add to cart");
+      }
+    } catch (error) {
+      console.error("Add to cart error:", error);
+      toast.error(error.response?.data?.message || "Failed to add to cart");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!productData) {
     return <div>Loading product...</div>;
@@ -49,6 +102,7 @@ const Product = () => {
             />
           </div>
         </div>
+
         {/* Product Info */}
         <div className="flex-1">
           <h1 className="font-medium text-2xl mt-2">{productData.name}</h1>
@@ -94,17 +148,22 @@ const Product = () => {
               ))}
             </div>
           </div>
-          <button onClick={()=>addToCart(productData._id,size)}className="bg-black text-white px-8 py-3 text-sm active:bg-gray-700">
-            Add to Cart
+          <button
+            onClick={handleAddToCart}
+            disabled={loading}
+            className="bg-black text-white px-8 py-3 text-sm active:bg-gray-700 disabled:bg-gray-400"
+          >
+            {loading ? "Adding..." : "Add to Cart"}
           </button>
           <hr className="mt-8 sm:w-4/5" />
           <div className="text-sm text-gray-500 mt-5 flex flex-col gap-1">
-            <p>100% Original Product.</p>
-            <p>Cash on delivery is available on this product.</p>
-            <p>Easy return and exchange policy within 7 days.</p>
+            <p>100% Original Product</p>
+            <p>Cash on delivery is available on this product</p>
+            <p>Easy return and exchange policy within 7 days</p>
           </div>
         </div>
       </div>
+
       {/* Description & Review */}
       <div className="mt-20">
         <div className="flex">
@@ -122,7 +181,8 @@ const Product = () => {
           </p>
         </div>
       </div>
-      {/* Display Related Products */}
+
+      {/* Related Products */}
       <RelatedProducts
         category={productData.category}
         subCategory={productData.subCategory}

@@ -13,22 +13,22 @@ const loginUser = async (req, res) => {
     const { email, password } = req.body;
     const user = await userModel.findOne({ email });
     if (!user) {
-      return res.json({ sucess: false, message: "User not found" });
+      return res.json({ success: false, message: "User not found" });
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (isMatch) {
       const token = createToken(user._id);
       return res.json({
-        sucess: true,
+        success: true,
         message: "Logged in successfully",
         token,
       });
     } else {
-      return res.json({ sucess: false, message: "Invalid credentials" });
+      return res.json({ success: false, message: "Invalid credentials" });
     }
   } catch (error) {
     console.log(error);
-    res.json({ sucess: false, message: error.message });
+    res.json({ success: false, message: error.message });
   }
 };
 
@@ -39,18 +39,18 @@ const registerUser = async (req, res) => {
     //checking user already exist or not
     const exists = await userModel.findOne({ email });
     if (exists) {
-      return res.json({ sucess: false, message: "User Already exists" });
+      return res.json({ success: false, message: "User Already exists" });
     }
     //validating email format & strong password
     if (!validator.isEmail(email)) {
       return res.json({
-        sucess: false,
+        success: false,
         message: "Please enter a valid  email",
       });
     }
     if (password.length < 8) {
       return res.json({
-        sucess: false,
+        success: false,
         message: "Please enter a strong password",
       });
     }
@@ -67,10 +67,10 @@ const registerUser = async (req, res) => {
     const user = await newUser.save();
 
     const token = createToken(user._id);
-    res.json({ sucess: true, token });
+    res.json({ success: true, token });
   } catch (error) {
     console.log(error);
-    res.json({ sucess: false, message: error.message });
+    res.json({ success: false, message: error.message });
   }
 };
 
@@ -89,7 +89,7 @@ const adminLogin = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    res.json({ sucess: false, message: error.message });
+    res.json({ success: false, message: error.message });
   }
 };
 

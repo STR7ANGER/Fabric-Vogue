@@ -22,7 +22,6 @@ const ShopContextProvider = (props) => {
 
   // Auth States
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token") || "");
 
   // Available coupons
@@ -41,124 +40,65 @@ const ShopContextProvider = (props) => {
     },
   ];
 
-  // Authentication Functions
-  const login = async (credentials) => {
-    try {
-      const response = await axios.post(
-        `${backendUrl}/api/user/login`,
-        credentials
-      );
-
-      if (response.data.sucess) {
-        const { token } = response.data;
-        localStorage.setItem("token", token);
-        setToken(token);
-        setIsLoggedIn(true);
-        toast.success(response.data.message || "Login successful!");
-        return true;
-      } else {
-        toast.error(response.data.message);
-        return false;
-      }
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || "Login failed";
-      toast.error(errorMessage);
-      throw new Error(errorMessage);
-    }
-  };
-
-  const signup = async (userData) => {
-    try {
-      const response = await axios.post(
-        `${backendUrl}/api/user/register`,
-        userData
-      );
-      if (response.data.sucess === true && response.data.token) {
-        toast.success("Account created successfully!");
-        return {
-          success: true,
-          token: response.data.token,
-        };
-      }
-      if (response.data.sucess === false) {
-        toast.error(response.data.message);
-        return {
-          success: false,
-          message: response.data.message,
-        };
-      }
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || "Signup failed";
-      toast.error(errorMessage);
-      throw new Error(errorMessage);
-    }
-  };
-
+  // Auth Functions
   const logout = () => {
     setToken("");
-    setUser(null);
     setIsLoggedIn(false);
     localStorage.removeItem("token");
+    localStorage.removeItem("userId");
     clearCart();
     toast.success("Logged out successfully");
   };
 
+  // Initialize auth state from localStorage
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
     if (savedToken) {
       setToken(savedToken);
       setIsLoggedIn(true);
     }
-  }, [token]);
+  }, []);
 
-  // Cart Functions
-  const addToCart = (itemID, size) => {
-    if (!size) {
-      toast.error("Select Product Size");
-      return;
-    }
+  // Cart Functions with Backend Integration
+  const getCartData = async () => {
+    const userId = localStorage.getItem("userId");
+    if (!isLoggedIn || !userId) return;
 
-    const cartData = structuredClone(cartItems);
-    if (cartData[itemID]) {
-      if (cartData[itemID][size]) {
-        cartData[itemID][size] += 1;
+    try {
+      const response = await axios.post(
+        `${backendUrl}/api/cart/get`,
+        { userId },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        setCartItems(response.data.cartData || {});
       } else {
-        cartData[itemID][size] = 1;
+        toast.error(response.data.message || "Failed to fetch cart data");
       }
-    } else {
-      cartData[itemID] = { [size]: 1 };
-    }
-
-    setCartItems(cartData);
-    validateCoupon(cartData);
-    toast.success("Product added to cart");
-  };
-
-  const updateItemQuantity = (itemID, size, quantity) => {
-    if (quantity < 0) return;
-
-    const cartData = structuredClone(cartItems);
-    if (cartData[itemID] && cartData[itemID][size]) {
-      cartData[itemID][size] = quantity;
-    }
-
-    setCartItems(cartData);
-    validateCoupon(cartData);
-  };
-
-  const removeItem = (itemID, size) => {
-    const updatedCart = { ...cartItems };
-    if (updatedCart[itemID] && updatedCart[itemID][size]) {
-      delete updatedCart[itemID][size];
-      if (Object.keys(updatedCart[itemID]).length === 0) {
-        delete updatedCart[itemID];
+    } catch (error) {
+      console.error("Error fetching cart:", error);
+      if (error.response?.status === 401) {
+        logout();
+        toast.error("Session expired. Please login again");
+      } else {
+        toast.error(
+          error.response?.data?.message || "Failed to fetch cart data"
+        );
       }
-      setCartItems(updatedCart);
-      validateCoupon(updatedCart);
-      toast.success("Product removed from cart");
     }
-    setConfirmDelete(null);
   };
+
+  // Load cart data when user logs in
+  useEffect(() => {
+    if (isLoggedIn) {
+      getCartData();
+    }
+  }, [isLoggedIn]);
 
   const clearCart = () => {
     setCartItems({});
@@ -246,6 +186,12 @@ const ShopContextProvider = (props) => {
       return null;
     }
 
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      toast.error("Session expired. Please login again");
+      return null;
+    }
+
     const orderDetails = calculateOrderDetails(cartItems);
 
     // Create order items array from cart items
@@ -270,31 +216,48 @@ const ShopContextProvider = (props) => {
       }
     }
 
-    // Create new order object
-    const newOrder = {
-      id: `ORD${Date.now()}`,
-      date: new Date().toLocaleDateString(),
-      items: orderItems,
-      orderDetails: orderDetails,
-      shippingAddress: formData,
-      paymentMethod: paymentMethod,
-      appliedCoupon: appliedCoupon?.code || null,
-    };
+    try {
+      const response = await axios.post(
+        `${backendUrl}/api/orders/create`,
+        {
+          userId,
+          items: orderItems,
+          orderDetails,
+          shippingAddress: formData,
+          paymentMethod,
+          appliedCoupon: appliedCoupon?.code || null,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    // Add the new order to orders state
-    setOrders((prevOrders) => [...prevOrders, newOrder]);
+      if (response.data.success) {
+        // Add the new order to orders state
+        const newOrder = response.data.order;
+        setOrders((prevOrders) => [...prevOrders, newOrder]);
 
-    // Clear the cart after successful order
-    clearCart();
-
-    return newOrder;
+        // Clear the cart after successful order
+        clearCart();
+        return newOrder;
+      } else {
+        toast.error(response.data.message || "Failed to create order");
+        return null;
+      }
+    } catch (error) {
+      console.error("Process order error:", error);
+      toast.error(error.response?.data?.message || "Failed to process order");
+      return null;
+    }
   };
 
   // Product Functions
   const getProductsData = async () => {
     try {
       const response = await axios.get(`${backendUrl}/api/product/list`);
-      if (response.data) {
+      if (response.data.success) {
         setProducts(response.data.products);
       } else {
         toast.error("Failed to load products");
@@ -319,11 +282,9 @@ const ShopContextProvider = (props) => {
 
     // Auth States and Functions
     isLoggedIn,
-    user,
+    setIsLoggedIn,
     token,
     setToken,
-    login,
-    signup,
     logout,
 
     // Shop States
@@ -339,9 +300,7 @@ const ShopContextProvider = (props) => {
     orders,
 
     // Cart Functions
-    addToCart,
-    updateItemQuantity,
-    removeItem,
+    getCartData,
     clearCart,
 
     // Coupon Functions

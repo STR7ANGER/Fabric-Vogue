@@ -2,10 +2,12 @@ import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useContext(ShopContext);
+  const { setIsLoggedIn, setToken, backendUrl } = useContext(ShopContext);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -20,13 +22,49 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.email || !formData.password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
     try {
-      const success = await login(formData);
-      if (success) {
+      setLoading(true);
+      const response = await axios.post(
+        `${backendUrl}/api/user/login`,
+        formData
+      );
+
+      if (response.data.sucess) {
+        const { token, userId } = response.data;
+
+        // Store token and userId in localStorage
+        localStorage.setItem("token", token);
+        localStorage.setItem("userId", userId);
+
+        // Update global state
+        setToken(token);
+        setIsLoggedIn(true);
+
+        // Configure axios default headers for future requests
+        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+        toast.success("Login successful!");
         navigate("/");
+      } else {
+        toast.error(response.data.message || "Login failed");
       }
     } catch (error) {
       console.error("Login error:", error);
+      if (error.response?.status === 401) {
+        toast.error("Invalid email or password");
+      } else {
+        toast.error(
+          error.response?.data?.message || "Login failed. Please try again."
+        );
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -36,9 +74,9 @@ const Login = () => {
         <h1 className="text-2xl font-semibold text-center mb-6">
           Welcome Back
         </h1>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label htmlFor="email" className="block text-gray-700">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="email" className="block text-gray-700 mb-1">
               Email Address
             </label>
             <input
@@ -49,11 +87,12 @@ const Login = () => {
               onChange={handleChange}
               placeholder="your@email.com"
               required
-              className="w-full p-2 border border-gray-300 rounded mt-2"
+              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-black"
+              disabled={loading}
             />
           </div>
-          <div className="mb-6">
-            <label htmlFor="password" className="block text-gray-700">
+          <div>
+            <label htmlFor="password" className="block text-gray-700 mb-1">
               Password
             </label>
             <input
@@ -64,7 +103,8 @@ const Login = () => {
               onChange={handleChange}
               placeholder="••••••••"
               required
-              className="w-full p-2 border border-gray-300 rounded mt-2"
+              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-black"
+              disabled={loading}
             />
             <div className="flex justify-between mt-2 text-sm">
               <Link
@@ -80,9 +120,10 @@ const Login = () => {
           </div>
           <button
             type="submit"
-            className="w-full p-2 bg-black text-white rounded hover:bg-gray-800"
+            disabled={loading}
+            className="w-full p-2 bg-black text-white rounded hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
       </div>

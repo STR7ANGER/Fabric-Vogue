@@ -1,18 +1,29 @@
-import { jwt } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 
 const authUser = async (req, res, next) => {
-  const { token } = req.headers;
-  if (!token) {
-    return res.json({ success: false, message: "Not Authroized Login Again" });
+  // Get token from Authorization header
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({
+      success: false,
+      message: "Not Authorized - Please provide valid token",
+    });
   }
 
+  // Extract token from "Bearer <token>"
+  const token = authHeader.split(" ")[1];
+
   try {
-    const token_decode = jwt.verify(token, process.env.JWT_SECRET);
-    req.body.userId = token_decode.id;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.body.userId = decoded.id;
     next();
   } catch (error) {
     console.log(error);
-    res.json({ success: false, messgae: error.message });
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired token",
+    });
   }
 };
 
