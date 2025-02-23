@@ -16,7 +16,7 @@ const RelatedProducts = ({ category, subCategory, currentProductId }) => {
           (item) =>
             item.category === category &&
             item.subCategory === subCategory &&
-            item._id !== currentProductId // Explicitly exclude the displayed product
+            item._id !== currentProductId 
         )
         .slice(0, 5); // Limit to 5 products
       setRelated(filteredProducts);
@@ -25,8 +25,8 @@ const RelatedProducts = ({ category, subCategory, currentProductId }) => {
 
   const handleProductClick = (id) => {
     if (id !== currentProductId) {
-      window.scrollTo(0, 0); // Scroll to top
-      navigate(`/product/${id}`); // Navigate to the clicked product's page
+      window.scrollTo(0, 0); 
+      navigate(`/product/${id}`);
     }
   };
 
@@ -39,7 +39,7 @@ const RelatedProducts = ({ category, subCategory, currentProductId }) => {
         {related.map((item) => (
           <div
             key={item._id}
-            onClick={() => handleProductClick(item._id)} // Handle product click
+            onClick={() => handleProductClick(item._id)} 
             className="cursor-pointer"
           >
             <ProductItem

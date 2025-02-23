@@ -1,90 +1,120 @@
 import userModel from "../models/userModel.js";
 
-// Add products to user cart
 const addToCart = async (req, res) => {
   try {
     const { userId, itemId, size } = req.body;
-    const userData = await userModel.findById(userId);
 
-    if (!userData) {
-      return res.json({ success: false, message: "User not found" });
+    if (!userId || !itemId || !size) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields",
+      });
     }
 
-    // Initialize cartData if it doesn't exist
-    if (!userData.cartData) {
-      userData.cartData = {};
-    }
-
-    let cartData = userData.cartData;
-
-    if (cartData[itemId]) {
-      if (cartData[itemId][size]) {
-        cartData[itemId][size] += 1;
-      } else {
-        cartData[itemId][size] = 1;
+    const updatedUser = await userModel.findOneAndUpdate(
+      { _id: userId },
+      {
+        $set: {
+          [`cartData.${itemId}.${size}`]: 1,
+        },
+      },
+      {
+        new: true,
+        upsert: true,
+        setDefaultsOnInsert: true,
       }
-    } else {
-      cartData[itemId] = {};
-      cartData[itemId][size] = 1;
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "Failed to update cart",
+      });
     }
 
-    userData.cartData = cartData;
-    await userData.save();
-
-    res.json({ success: true, message: "Added To Cart" });
+    res.json({
+      success: true,
+      message: "Added To Cart",
+      cartData: updatedUser.cartData,
+    });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Server error while adding to cart",
+    });
   }
 };
 
-// Update user cart
 const updateCart = async (req, res) => {
   try {
     const { userId, itemId, size, quantity } = req.body;
-    const userData = await userModel.findById(userId);
 
-    if (!userData) {
-      return res.json({ success: false, message: "User not found" });
+    if (!userId || !itemId || !size || quantity === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields",
+      });
     }
 
-    if (!userData.cartData) {
-      userData.cartData = {};
+    const updatedUser = await userModel.findOneAndUpdate(
+      { _id: userId },
+      {
+        $set: {
+          [`cartData.${itemId}.${size}`]: quantity,
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
-    let cartData = userData.cartData;
-
-    if (!cartData[itemId]) {
-      cartData[itemId] = {};
-    }
-
-    cartData[itemId][size] = quantity;
-
-    userData.cartData = cartData;
-    await userData.save();
-
-    res.json({ success: true, message: "Cart Updated" });
+    res.json({
+      success: true,
+      message: "Cart Updated",
+      cartData: updatedUser.cartData,
+    });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Server error while updating cart",
+    });
   }
 };
 
-// Get user cart data
 const getUserCart = async (req, res) => {
   try {
     const { userId } = req.body;
-    const userData = await userModel.findById(userId);
 
-    if (!userData) {
-      return res.json({ success: false, message: "User not found" });
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required",
+      });
     }
 
-    const cartData = userData.cartData || {};
-    res.json({ success: true, cartData });
+    const user = await userModel.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      cartData: user.cartData || {},
+    });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching cart",
+    });
   }
 };
 

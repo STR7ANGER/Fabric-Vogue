@@ -5,13 +5,11 @@ import axios from "axios";
 export const ShopContext = createContext();
 
 const ShopContextProvider = (props) => {
-  // App Constants
   const currency = "$";
   const deliveryFee = 10;
   const MIN_ORDER_VALUE = 500;
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  // Shop States
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [cartItems, setCartItems] = useState({});
@@ -19,12 +17,9 @@ const ShopContextProvider = (props) => {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
-
-  // Auth States
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [token, setToken] = useState(localStorage.getItem("token") || "");
 
-  // Available coupons
   const coupons = [
     {
       code: "FLAT200",
@@ -40,26 +35,25 @@ const ShopContextProvider = (props) => {
     },
   ];
 
-  // Auth Functions
   const logout = () => {
     setToken("");
     setIsLoggedIn(false);
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
+    delete axios.defaults.headers.common["Authorization"];
     clearCart();
     toast.success("Logged out successfully");
   };
 
-  // Initialize auth state from localStorage
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
     if (savedToken) {
       setToken(savedToken);
       setIsLoggedIn(true);
+      axios.defaults.headers.common["Authorization"] = `Bearer ${savedToken}`;
     }
   }, []);
 
-  // Cart Functions with Backend Integration
   const getCartData = async () => {
     const userId = localStorage.getItem("userId");
     if (!isLoggedIn || !userId) return;
@@ -69,9 +63,7 @@ const ShopContextProvider = (props) => {
         `${backendUrl}/api/cart/get`,
         { userId },
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
@@ -81,7 +73,6 @@ const ShopContextProvider = (props) => {
         toast.error(response.data.message || "Failed to fetch cart data");
       }
     } catch (error) {
-      console.error("Error fetching cart:", error);
       if (error.response?.status === 401) {
         logout();
         toast.error("Session expired. Please login again");
@@ -93,7 +84,6 @@ const ShopContextProvider = (props) => {
     }
   };
 
-  // Load cart data when user logs in
   useEffect(() => {
     if (isLoggedIn) {
       getCartData();
@@ -105,7 +95,6 @@ const ShopContextProvider = (props) => {
     setAppliedCoupon(null);
   };
 
-  // Coupon Functions
   const validateCoupon = (currentCartItems) => {
     if (!appliedCoupon) return;
 
@@ -142,7 +131,6 @@ const ShopContextProvider = (props) => {
     return true;
   };
 
-  // Order Functions
   const calculateOrderDetails = (currentCartItems, coupon = appliedCoupon) => {
     let subtotal = 0;
     let itemCount = 0;
@@ -193,9 +181,8 @@ const ShopContextProvider = (props) => {
     }
 
     const orderDetails = calculateOrderDetails(cartItems);
-
-    // Create order items array from cart items
     const orderItems = [];
+
     for (const itemId in cartItems) {
       for (const size in cartItems[itemId]) {
         const quantity = cartItems[itemId][size];
@@ -206,8 +193,8 @@ const ShopContextProvider = (props) => {
               productId: itemId,
               name: product.name,
               price: product.price,
-              quantity: quantity,
-              size: size,
+              quantity,
+              size,
               image: product.image || "/api/placeholder/120/160",
               status: "Processing",
             });
@@ -228,32 +215,25 @@ const ShopContextProvider = (props) => {
           appliedCoupon: appliedCoupon?.code || null,
         },
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
       if (response.data.success) {
-        // Add the new order to orders state
         const newOrder = response.data.order;
         setOrders((prevOrders) => [...prevOrders, newOrder]);
-
-        // Clear the cart after successful order
         clearCart();
         return newOrder;
-      } else {
-        toast.error(response.data.message || "Failed to create order");
-        return null;
       }
+
+      toast.error(response.data.message || "Failed to create order");
+      return null;
     } catch (error) {
-      console.error("Process order error:", error);
       toast.error(error.response?.data?.message || "Failed to process order");
       return null;
     }
   };
 
-  // Product Functions
   const getProductsData = async () => {
     try {
       const response = await axios.get(`${backendUrl}/api/product/list`);
@@ -263,31 +243,24 @@ const ShopContextProvider = (props) => {
         toast.error("Failed to load products");
       }
     } catch (error) {
-      console.error("Error fetching products:", error);
       toast.error("Failed to load products");
     }
   };
 
-  // Load products on mount
   useEffect(() => {
     getProductsData();
   }, []);
 
   const contextValue = {
-    // App Constants
     currency,
     deliveryFee,
     MIN_ORDER_VALUE,
     backendUrl,
-
-    // Auth States and Functions
     isLoggedIn,
     setIsLoggedIn,
     token,
     setToken,
     logout,
-
-    // Shop States
     products,
     search,
     setSearch,
@@ -298,17 +271,11 @@ const ShopContextProvider = (props) => {
     setConfirmDelete,
     appliedCoupon,
     orders,
-
-    // Cart Functions
     getCartData,
     clearCart,
-
-    // Coupon Functions
     coupons,
     applyCoupon,
     validateCoupon,
-
-    // Order Functions
     calculateOrderDetails,
     processOrder,
   };

@@ -3,93 +3,143 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import validator from "validator";
 
-const createToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET);
-};
+const createToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET);
 
-// for user login
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await userModel.findOne({ email });
-    if (!user) {
-      return res.json({ success: false, message: "User not found" });
-    }
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (isMatch) {
-      const token = createToken(user._id);
-      return res.json({
-        success: true,
-        message: "Logged in successfully",
-        token,
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
       });
-    } else {
-      return res.json({ success: false, message: "Invalid credentials" });
     }
+
+    const user = await userModel.findOne({ email });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    const token = createToken(user._id);
+
+    return res.status(200).json({
+      success: true,
+      message: "Logged in successfully",
+      token,
+      userId: user._id.toString(),
+    });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "Server error during login",
+    });
   }
 };
 
-//for user register
 const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
-    //checking user already exist or not
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
+    }
+
     const exists = await userModel.findOne({ email });
     if (exists) {
-      return res.json({ success: false, message: "User Already exists" });
+      return res.status(409).json({
+        success: false,
+        message: "User already exists",
+      });
     }
-    //validating email format & strong password
+
     if (!validator.isEmail(email)) {
-      return res.json({
+      return res.status(400).json({
         success: false,
-        message: "Please enter a valid  email",
+        message: "Please enter a valid email",
       });
     }
+
     if (password.length < 8) {
-      return res.json({
+      return res.status(400).json({
         success: false,
-        message: "Please enter a strong password",
+        message: "Password must be at least 8 characters long",
       });
     }
-    //hashing password
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new userModel({
+    const user = await userModel.create({
       name,
       email,
       password: hashedPassword,
     });
 
-    const user = await newUser.save();
-
     const token = createToken(user._id);
-    res.json({ success: true, token });
+
+    return res.status(201).json({
+      success: true,
+      token,
+      message: "User registered successfully",
+    });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "Server error during registration",
+    });
   }
 };
 
-//for admin login
 const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (
-      email === process.env.ADMIN_EMAIL &&
-      password === process.env.ADMIN_PASSWORD
-    ) {
-      const token = jwt.sign(email + password, process.env.JWT_SECRET);
-      res.json({ success: true, token });
-    } else {
-      res.json({ success: false, message: "Invalid credentials" });
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
     }
+
+    if (
+      email !== process.env.ADMIN_EMAIL ||
+      password !== process.env.ADMIN_PASSWORD
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    const token = jwt.sign(email + password, process.env.JWT_SECRET);
+
+    return res.status(200).json({
+      success: true,
+      token,
+      message: "Admin logged in successfully",
+    });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "Server error during admin login",
+    });
   }
 };
 

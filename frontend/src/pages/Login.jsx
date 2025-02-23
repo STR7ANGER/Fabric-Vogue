@@ -30,39 +30,25 @@ const Login = () => {
 
     try {
       setLoading(true);
-      const response = await axios.post(
-        `${backendUrl}/api/user/login`,
-        formData
-      );
+      const response = await axios.post(`${backendUrl}/api/user/login`, formData);
+      const { success, token, userId, message } = response.data;
 
-      if (response.data.sucess) {
-        const { token, userId } = response.data;
-
-        // Store token and userId in localStorage
+      if (success && token && userId) {
         localStorage.setItem("token", token);
         localStorage.setItem("userId", userId);
-
-        // Update global state
         setToken(token);
         setIsLoggedIn(true);
-
-        // Configure axios default headers for future requests
         axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
-        toast.success("Login successful!");
+        toast.success(message || "Login successful!");
         navigate("/");
       } else {
-        toast.error(response.data.message || "Login failed");
+        toast.error(message || "Login failed");
       }
     } catch (error) {
-      console.error("Login error:", error);
-      if (error.response?.status === 401) {
-        toast.error("Invalid email or password");
-      } else {
-        toast.error(
-          error.response?.data?.message || "Login failed. Please try again."
-        );
-      }
+      toast.error(
+        error.response?.data?.message ||
+          "Login failed. Please check your credentials and try again."
+      );
     } finally {
       setLoading(false);
     }
