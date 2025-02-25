@@ -52,7 +52,7 @@ const placeOrderStripe = async (req, res) => {
       price_data: {
         currency: currency,
         product_data: { name: item.name },
-        unit_amout: item.price * 100,
+        unit_amount: item.price * 100,
       },
       quantity: item.quantity,
     }));
@@ -61,7 +61,7 @@ const placeOrderStripe = async (req, res) => {
       price_data: {
         currency: currency,
         product_data: { name: "Delivery Charges" },
-        unit_amout: deliveryCharge * 100,
+        unit_amount: deliveryCharge * 100,
       },
       quantity: 1,
     });
@@ -84,18 +84,14 @@ const placeOrderStripe = async (req, res) => {
 
 //verify stripe
 const verifyStripe = async (req, res) => {
-  const { orderId, success } = req.body;
+  const { orderId, success,userId } = req.body;
   try {
     if (success === "true") {
-      // Update the order to mark payment as successful
       await orderModel.findByIdAndUpdate(orderId, { payment: true });
+      await userModel.findByIdAndUpdate(userId, { cartData: {} });
       res.json({ success: true, message: "Payment successful" });
     } else {
-      // If payment failed, you can either delete the order or mark it as failed
-      await orderModel.findByIdAndUpdate(orderId, {
-        status: "Payment Failed",
-        payment: false,
-      });
+      await orderModel.findByIdAndDelete(orderId);
       res.json({ success: false, message: "Payment failed" });
     }
   } catch (error) {
@@ -155,4 +151,5 @@ export {
   allOrders,
   userOrders,
   updateStatus,
+  verifyStripe
 };

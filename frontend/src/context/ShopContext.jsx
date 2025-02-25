@@ -7,33 +7,16 @@ export const ShopContext = createContext();
 const ShopContextProvider = (props) => {
   const currency = "$";
   const deliveryFee = 10;
-  const MIN_ORDER_VALUE = 500;
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [cartItems, setCartItems] = useState({});
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [token, setToken] = useState(localStorage.getItem("token") || "");
-
-  const coupons = [
-    {
-      code: "FLAT200",
-      discount: 200,
-      description: "Get Flat $200 Off on cart value of $500 & Above",
-      minOrder: MIN_ORDER_VALUE,
-    },
-    {
-      code: "FREESHIP",
-      discount: deliveryFee,
-      description: "Free Delivery on your order",
-      minOrder: 0,
-    },
-  ];
 
   const logout = () => {
     setToken("");
@@ -138,43 +121,7 @@ const ShopContextProvider = (props) => {
     setAppliedCoupon(null);
   };
 
-  const validateCoupon = (currentCartItems) => {
-    if (!appliedCoupon) return;
-
-    const { subtotal } = calculateOrderDetails(currentCartItems, null);
-    if (
-      subtotal < appliedCoupon.minOrder ||
-      Object.keys(currentCartItems).length === 0
-    ) {
-      setAppliedCoupon(null);
-      toast.info("Coupon removed due to cart changes");
-    }
-  };
-
-  const applyCoupon = (code) => {
-    const coupon = coupons.find((c) => c.code === code);
-    if (!coupon) {
-      toast.error("Invalid coupon");
-      return false;
-    }
-
-    const { subtotal } = calculateOrderDetails(cartItems, null);
-    if (subtotal < coupon.minOrder) {
-      const remaining = coupon.minOrder - subtotal;
-      toast.error(
-        `Add products worth ${currency}${remaining.toFixed(
-          2
-        )} more to apply this coupon`
-      );
-      return false;
-    }
-
-    setAppliedCoupon(coupon);
-    toast.success("Coupon applied successfully!");
-    return true;
-  };
-
-  const calculateOrderDetails = (currentCartItems, coupon = appliedCoupon) => {
+  const calculateOrderDetails = (currentCartItems) => {
     let subtotal = 0;
     let itemCount = 0;
 
@@ -191,22 +138,12 @@ const ShopContextProvider = (props) => {
       }
     }
 
-    let discount = 0;
     let shippingFee = itemCount > 0 ? deliveryFee : 0;
-
-    if (coupon && subtotal >= coupon.minOrder) {
-      if (coupon.code === "FREESHIP") {
-        shippingFee = 0;
-      } else {
-        discount = coupon.discount;
-      }
-    }
 
     return {
       subtotal,
-      discount,
       shippingFee,
-      total: subtotal - discount + shippingFee,
+      total: subtotal + shippingFee,
       itemCount,
     };
   };
@@ -323,7 +260,6 @@ const ShopContextProvider = (props) => {
   const contextValue = {
     currency,
     deliveryFee,
-    MIN_ORDER_VALUE,
     backendUrl,
     isLoggedIn,
     setIsLoggedIn,
@@ -338,14 +274,10 @@ const ShopContextProvider = (props) => {
     cartItems,
     confirmDelete,
     setConfirmDelete,
-    appliedCoupon,
     orders,
     getCartData,
     getUserOrders,
     clearCart,
-    coupons,
-    applyCoupon,
-    validateCoupon,
     calculateOrderDetails,
     processOrder,
   };

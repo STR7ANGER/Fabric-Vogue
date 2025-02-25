@@ -14,14 +14,13 @@ const Cart = () => {
     isLoggedIn,
     confirmDelete,
     setConfirmDelete,
-    coupons,
-    applyCoupon,
+
     calculateOrderDetails,
     getCartData,
   } = useContext(ShopContext);
 
   const [cartData, setCartData] = useState([]);
-  const [selectedCoupon, setSelectedCoupon] = useState("");
+
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -140,26 +139,6 @@ const Cart = () => {
   };
 
   const handleModalCancel = () => setConfirmDelete(null);
-
-  const handleApplyCoupon = () => {
-    if (!isLoggedIn) {
-      toast.error("Please login to apply coupons");
-      navigate("/login");
-      return;
-    }
-
-    if (!selectedCoupon) {
-      toast.error("Please select a coupon");
-      return;
-    }
-
-    if (cartData.length === 0) {
-      toast.error("Cannot apply coupon to empty cart");
-      return;
-    }
-
-    applyCoupon(selectedCoupon);
-  };
 
   const handlePlaceOrder = () => {
     if (!isLoggedIn) {
@@ -287,25 +266,7 @@ const Cart = () => {
                   {orderDetails.subtotal.toFixed(2)}
                 </span>
               </div>
-              {orderDetails.discount > 0 && (
-                <div className="flex justify-between text-green-600">
-                  <span>Discount</span>
-                  <span>
-                    - {currency}
-                    {orderDetails.discount.toFixed(2)}
-                  </span>
-                </div>
-              )}
-              {cartData.length > 0 && (
-                <div className="flex justify-between">
-                  <span>Delivery Fee</span>
-                  <span>
-                    {orderDetails.shippingFee === 0
-                      ? "FREE"
-                      : `${currency}${orderDetails.shippingFee.toFixed(2)}`}
-                  </span>
-                </div>
-              )}
+
               <div className="flex justify-between font-semibold pt-2 border-t">
                 <span>Order Total</span>
                 <span>
@@ -316,32 +277,6 @@ const Cart = () => {
             </div>
 
             <div className="mt-6">
-              <h4 className="font-semibold mb-2">Available Coupons</h4>
-              <div className="space-y-2 mb-4">
-                {coupons.map((coupon) => (
-                  <div
-                    key={coupon.code}
-                    className={`p-3 border rounded-lg cursor-pointer ${
-                      selectedCoupon === coupon.code
-                        ? "border-blue-500 bg-blue-50"
-                        : ""
-                    }`}
-                    onClick={() => setSelectedCoupon(coupon.code)}
-                  >
-                    <div className="font-medium">{coupon.code}</div>
-                    <div className="text-sm text-gray-600">
-                      {coupon.description}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <button
-                onClick={handleApplyCoupon}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg mb-4 disabled:bg-blue-300"
-                disabled={cartData.length === 0 || loading || !isLoggedIn}
-              >
-                Apply Selected Coupon
-              </button>
               <button
                 onClick={handlePlaceOrder}
                 className={`w-full px-4 py-2 ${
