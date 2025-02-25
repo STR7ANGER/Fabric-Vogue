@@ -17,6 +17,7 @@ const PlaceOrder = () => {
   } = useContext(ShopContext);
 
   const [selectedPayment, setSelectedPayment] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -39,33 +40,56 @@ const PlaceOrder = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (!selectedPayment) {
       toast.error("Please select a payment method");
       return;
     }
-  
+
     if (orderDetails.subtotal === 0) {
       toast.error("Your cart is empty!");
       navigate("/cart");
       return;
     }
-  
-    // Process the order using the context function
-    const order = processOrder(formData, selectedPayment);
-  
-    // Show success message
-    toast.success("Order placed successfully!");
-  
-    // Redirect to orders page
-    navigate("/order");
+
+    // Disable the button while processing to prevent multiple clicks
+    setIsProcessing(true);
+
+    try {
+      // Convert payment method names to match backend endpoints
+      let paymentMethodBackend;
+      if (selectedPayment === "stripe") {
+        paymentMethodBackend = "stripe";
+      } else if (selectedPayment === "razorpay") {
+        paymentMethodBackend = "razorpay";
+      } else {
+        paymentMethodBackend = "cod";
+      }
+
+      // Process the order using the context function
+      const result = await processOrder(formData, paymentMethodBackend);
+
+      if (result && result.success) {
+        // Show success message for COD orders (for Stripe, we redirect)
+        if (paymentMethodBackend === "cod") {
+          toast.success("Order placed successfully!");
+          // Redirect to orders page
+          navigate("/order");
+        }
+      }
+    } catch (error) {
+      toast.error("Failed to place order. Please try again.");
+      console.error("Order error:", error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
     <div className="max-w-6xl mx-auto p-6 flex flex-col sm:flex-row gap-1 sm:gap-10 pt-10 border-t">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full">
         {/* Left Column - Delivery Information */}
         <div>
           <h2 className="text-xl font-medium mb-6">
@@ -175,6 +199,15 @@ const PlaceOrder = () => {
                   {orderDetails.subtotal.toFixed(2)}
                 </span>
               </div>
+              {appliedCoupon && (
+                <div className="flex justify-between items-center text-green-600">
+                  <span>Discount ({appliedCoupon.code})</span>
+                  <span>
+                    - {currency}
+                    {appliedCoupon.discount.toFixed(2)}
+                  </span>
+                </div>
+              )}
               {orderDetails.subtotal > 0 && (
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Shipping Fee</span>
@@ -248,10 +281,10 @@ const PlaceOrder = () => {
 
             <button
               onClick={handleSubmit}
-              className="w-full bg-black text-white py-4 rounded-md hover:bg-gray-800 transition-colors"
-              disabled={orderDetails.subtotal === 0}
+              className="w-full bg-black text-white py-4 rounded-md hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              disabled={orderDetails.subtotal === 0 || isProcessing}
             >
-              PLACE ORDER
+              {isProcessing ? "PROCESSING..." : "PLACE ORDER"}
             </button>
           </div>
         </div>

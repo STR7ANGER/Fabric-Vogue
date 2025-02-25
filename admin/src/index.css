@@ -1,19 +1,25 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Prata&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Prata&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-*{
-    font-family: Outfit;
+* {
+  font-family: Outfit;
 }
 
-select,input,textarea{
-    border: 1px solid #c2c2c2;
-    outline-color: #C586A5;
-    border-radius: 4px;
+select,
+input,
+textarea {
+  border: 1px solid #c2c2c2;
+  outline-color: #c586a5;
+  border-radius: 4px;
 }
 
-.active{
-    background-color: #ffebf5 ;
-    border-color: #C586A5 ;
+.active {
+  background-color: #ffebf5;
+  border-color: #c586a5;
+}
+
+::-webkit-scrollbar {
+  display: none;
 }

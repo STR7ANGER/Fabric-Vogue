@@ -54,6 +54,48 @@ const ShopContextProvider = (props) => {
     }
   }, []);
 
+  // Fetch user's orders
+  const getUserOrders = async () => {
+    const userId = localStorage.getItem("userId");
+    if (!isLoggedIn || !userId) return;
+
+    try {
+      console.log("Fetching orders for userId:", userId);
+      // Log the complete URL for debugging
+      const url = `${backendUrl}/api/orders/userorders`;
+      console.log("Requesting URL:", url);
+
+      const response = await axios.post(
+        url,
+        { userId },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.success) {
+        console.log("Orders fetched successfully:", response.data.orders);
+        setOrders(response.data.orders || []);
+      } else {
+        toast.error(response.data.message || "Failed to fetch orders");
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      if (error.response?.status === 401) {
+        logout();
+        toast.error("Session expired. Please login again");
+      } else if (error.response?.status === 404) {
+        // If endpoint not found, check backend routes
+        console.error(
+          "API endpoint not found. Check backend route definition."
+        );
+        toast.error("Orders feature unavailable. Please try again later.");
+      } else {
+        toast.error(error.response?.data?.message || "Failed to fetch orders");
+      }
+    }
+  };
+
   const getCartData = async () => {
     const userId = localStorage.getItem("userId");
     if (!isLoggedIn || !userId) return;
@@ -87,6 +129,7 @@ const ShopContextProvider = (props) => {
   useEffect(() => {
     if (isLoggedIn) {
       getCartData();
+      getUserOrders();
     }
   }, [isLoggedIn]);
 
@@ -203,27 +246,53 @@ const ShopContextProvider = (props) => {
       }
     }
 
+    // Format address data for backend
+    const address = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      street: formData.street,
+      city: formData.city,
+      state: formData.state,
+      zipcode: formData.zipcode,
+      country: formData.country,
+      phone: formData.phone,
+    };
+
     try {
-      const response = await axios.post(
-        `${backendUrl}/api/orders/create`,
-        {
-          userId,
-          items: orderItems,
-          orderDetails,
-          shippingAddress: formData,
-          paymentMethod,
-          appliedCoupon: appliedCoupon?.code || null,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      let endpoint;
+      let requestData = {
+        userId,
+        items: orderItems,
+        amount: orderDetails.total,
+        address,
+      };
+
+      // Select the appropriate endpoint based on payment method
+      if (paymentMethod === "cod") {
+        endpoint = `${backendUrl}/api/orders/place`;
+      } else if (paymentMethod === "stripe") {
+        endpoint = `${backendUrl}/api/orders/stripe`;
+      } else if (paymentMethod === "razorpay") {
+        endpoint = `${backendUrl}/api/orders/razorpay`;
+      }
+
+      const response = await axios.post(endpoint, requestData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (response.data.success) {
-        const newOrder = response.data.order;
-        setOrders((prevOrders) => [...prevOrders, newOrder]);
+        // Handle Stripe redirect if necessary
+        if (paymentMethod === "stripe" && response.data.session_url) {
+          window.location.href = response.data.session_url;
+          return null;
+        }
+
+        // For COD and non-redirect payments, update orders and clear cart
+        getUserOrders(); // Refresh orders after placing a new one
         clearCart();
-        return newOrder;
+
+        return { success: true };
       }
 
       toast.error(response.data.message || "Failed to create order");
@@ -272,6 +341,7 @@ const ShopContextProvider = (props) => {
     appliedCoupon,
     orders,
     getCartData,
+    getUserOrders,
     clearCart,
     coupons,
     applyCoupon,

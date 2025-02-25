@@ -84,12 +84,24 @@ const placeOrderStripe = async (req, res) => {
 
 //verify stripe
 const verifyStripe = async (req, res) => {
-  const { orderId, success, userId } = req.body;
+  const { orderId, success } = req.body;
   try {
-
-    
-
-  } catch (error) {}
+    if (success === "true") {
+      // Update the order to mark payment as successful
+      await orderModel.findByIdAndUpdate(orderId, { payment: true });
+      res.json({ success: true, message: "Payment successful" });
+    } else {
+      // If payment failed, you can either delete the order or mark it as failed
+      await orderModel.findByIdAndUpdate(orderId, {
+        status: "Payment Failed",
+        payment: false,
+      });
+      res.json({ success: false, message: "Payment failed" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
 };
 
 //RazorPay
