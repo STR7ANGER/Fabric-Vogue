@@ -30,12 +30,16 @@ const Login = () => {
 
     try {
       setLoading(true);
-      const response = await axios.post(`${backendUrl}/api/user/login`, formData);
-      const { success, token, userId, message } = response.data;
+      const response = await axios.post(
+        `${backendUrl}/api/user/login`,
+        formData
+      );
+      const { success, token, userId, message, name } = response.data;
 
       if (success && token && userId) {
         localStorage.setItem("token", token);
         localStorage.setItem("userId", userId);
+        localStorage.setItem("name", name);
         setToken(token);
         setIsLoggedIn(true);
         axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;

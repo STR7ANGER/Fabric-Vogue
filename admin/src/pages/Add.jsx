@@ -59,10 +59,10 @@ const Add = ({ token }) => {
         setImage3(false);
         setImage4(false);
         setPrice("");
-        setCategory("Men")
-        setSubcategory("Topwear")
-        setBestseller(false)
-        setSizes([])
+        setCategory("Men");
+        setSubcategory("Topwear");
+        setBestseller(false);
+        setSizes([]);
       } else {
         toast.error(response.data.message);
       }
@@ -189,6 +189,8 @@ const Add = ({ token }) => {
           >
             <option value="Men">Men</option>
             <option value="Women">Women</option>
+            <option value="Women">Boy</option>
+            <option value="Women">Girl</option>
             <option value="Kids">Kids</option>
           </select>
         </div>
@@ -205,6 +207,8 @@ const Add = ({ token }) => {
             <option value="Topwear">Topwear</option>
             <option value="Bottomwear">Bottomwear</option>
             <option value="Winterwear">Winterwear</option>
+            <option value="Winterwear">Footwear</option>
+            <option value="Winterwear">Headwear</option>
           </select>
         </div>
 

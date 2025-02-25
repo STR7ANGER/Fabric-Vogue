@@ -74,27 +74,48 @@ const Product = () => {
   if (!productData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading product...</div>
+        <div className="text-xl text-gray-600 flex flex-col items-center">
+          <div className="w-16 h-16 border-4 border-t-purple-600 border-b-indigo-600 border-r-transparent border-l-transparent rounded-full animate-spin mb-4"></div>
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-900 to-indigo-800">
+            Loading product...
+          </span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="border-t-2 pt-10 transition-opacity ease-in duration-500 opacity-100">
-      <div className="flex gap-12 sm:gap-12 flex-col sm:flex-row">
+    <div className="relative px-4 mt-20 sm:px-8 py-16 transition-opacity ease-in duration-500 opacity-100">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 bg-gradient-to-r from-purple-900/5 via-indigo-800/5 to-blue-900/5 rounded-2xl"></div>
+      <div className="absolute -right-16 top-1/4 w-80 h-80 bg-gradient-to-br from-purple-600/10 to-indigo-600/10 rounded-full blur-3xl -z-10"></div>
+      <div className="absolute -left-16 bottom-1/4 w-80 h-80 bg-gradient-to-tl from-indigo-600/10 to-purple-600/10 rounded-full blur-3xl -z-10"></div>
+
+      <div className="relative flex gap-12 sm:gap-12 flex-col sm:flex-row">
         <div className="flex-1 flex flex-col-reverse gap-3 sm:flex-row">
-          <div className="flex sm:flex-col overflow-x-auto sm:overflow-y-scroll justify-between sm:justify-normal sm:w-[18.7%] w-full">
+          <div className="flex sm:flex-col overflow-x-auto sm:overflow-y-scroll max-h-96 justify-between sm:justify-normal sm:w-[18.7%] w-full scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-transparent p-1">
             {productData.image?.map((imgSrc, index) => (
-              <img
+              <div
                 key={`${productId}-thumb-${index}`}
-                src={imgSrc}
-                alt={`${productData.name} view ${index + 1}`}
-                className="w-[24%] sm:w-full sm:mb-3 flex-shrink-0 cursor-pointer"
-                onClick={() => setSelectedImage(imgSrc)}
-              />
+                className={`relative mb-3 transition-all duration-300 ${
+                  selectedImage === imgSrc ? "scale-105" : ""
+                }`}
+              >
+                <img
+                  src={imgSrc}
+                  alt={`${productData.name} view ${index + 1}`}
+                  className={`w-[24%] sm:w-full flex-shrink-0 cursor-pointer rounded-lg shadow-sm hover:shadow-md transition-all duration-300 ${
+                    selectedImage === imgSrc ? "ring-2 ring-purple-600" : ""
+                  }`}
+                  onClick={() => setSelectedImage(imgSrc)}
+                />
+                {selectedImage === imgSrc && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-900/10 via-indigo-800/10 to-blue-900/10 rounded-lg pointer-events-none"></div>
+                )}
+              </div>
             ))}
           </div>
-          <div className="w-full sm:w-[80%]">
+          <div className="w-full sm:w-[80%] rounded-lg overflow-hidden shadow-lg shadow-purple-900/10 bg-white">
             <img
               src={
                 selectedImage ||
@@ -102,13 +123,15 @@ const Product = () => {
                 "/api/placeholder/400/600"
               }
               alt={productData.name}
-              className="w-full h-auto"
+              className="w-full h-auto object-cover transition-all duration-500 hover:scale-105"
             />
           </div>
         </div>
 
-        <div className="flex-1">
-          <h1 className="font-medium text-2xl mt-2">{productData.name}</h1>
+        <div className="flex-1 bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg shadow-purple-900/5">
+          <h1 className="font-medium text-2xl mt-2 text-transparent bg-clip-text bg-gradient-to-r from-purple-900 to-indigo-800">
+            {productData.name}
+          </h1>
 
           <div className="flex items-center gap-1 mt-2">
             {[...Array(4)].map((_, index) => (
@@ -124,11 +147,11 @@ const Product = () => {
               alt="Star rating"
               className="w-3.5"
             />
-            <p className="pl-2">(122)</p>
+            <p className="pl-2 text-gray-600">(122)</p>
           </div>
 
           <div className="mt-5">
-            <p className="text-3xl font-medium">
+            <p className="text-3xl font-medium text-transparent bg-clip-text bg-gradient-to-r from-purple-900 to-indigo-800">
               {currency}
               {productData.price?.toFixed(2)}
             </p>
@@ -138,7 +161,7 @@ const Product = () => {
                   {currency}
                   {productData.originalPrice?.toFixed(2)}
                 </p>
-                <p className="text-green-600">
+                <p className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 py-0.5 rounded-full text-xs font-medium">
                   {Math.round(
                     ((productData.originalPrice - productData.price) /
                       productData.originalPrice) *
@@ -150,19 +173,23 @@ const Product = () => {
             )}
           </div>
 
-          <p className="mt-5 text-gray-500 md:w-4/5">
+          <p className="mt-5 text-gray-600 md:w-4/5 leading-relaxed">
             {productData.description}
           </p>
 
           <div className="flex flex-col gap-4 my-8">
-            <p>Select Size</p>
-            <div className="flex gap-2">
+            <p className="text-transparent bg-clip-text bg-gradient-to-r from-purple-900 to-indigo-800 font-medium">
+              Select Size
+            </p>
+            <div className="flex gap-2 flex-wrap">
               {productData.sizes?.map((size) => (
                 <button
                   key={size}
                   onClick={() => setSelectedSize(size)}
-                  className={`border py-2 px-4 bg-gray-100 ${
-                    size === selectedSize ? "border-orange-500" : ""
+                  className={`border py-2 px-4 rounded-lg transition-all duration-300 ${
+                    size === selectedSize
+                      ? "border-none bg-gradient-to-r from-purple-900 via-indigo-800 to-blue-900 text-white shadow-lg shadow-purple-900/20"
+                      : "bg-white hover:bg-gray-50 border-gray-200"
                   }`}
                 >
                   {size}
@@ -174,30 +201,67 @@ const Product = () => {
           <button
             onClick={handleAddToCart}
             disabled={loading}
-            className="bg-black text-white px-8 py-3 text-sm active:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="bg-gradient-to-r from-purple-900 via-indigo-800 to-blue-900 text-white px-8 py-3 text-sm font-medium rounded-full shadow-lg shadow-purple-900/20 hover:shadow-xl transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {loading ? "Adding..." : "Add to Cart"}
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg
+                  className="animate-spin h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Adding...
+              </span>
+            ) : (
+              "Add to Cart"
+            )}
           </button>
 
-          <hr className="mt-8 sm:w-4/5" />
+          <hr className="mt-8 sm:w-4/5 border-gray-200" />
           <div className="text-sm text-gray-500 mt-5 flex flex-col gap-1">
-            <p>100% Original Product</p>
-            <p>Cash on delivery is available</p>
-            <p>Easy return and exchange within 7 days</p>
+            <p className="flex items-center gap-2">
+              <span className="inline-block w-4 h-4 bg-gradient-to-r from-purple-900 to-indigo-800 rounded-full"></span>
+              100% Original Product
+            </p>
+            <p className="flex items-center gap-2">
+              <span className="inline-block w-4 h-4 bg-gradient-to-r from-purple-900 to-indigo-800 rounded-full"></span>
+              Cash on delivery is available
+            </p>
+            <p className="flex items-center gap-2">
+              <span className="inline-block w-4 h-4 bg-gradient-to-r from-purple-900 to-indigo-800 rounded-full"></span>
+              Easy return and exchange within 7 days
+            </p>
           </div>
         </div>
       </div>
 
-      <div className="mt-20">
+      <div className="mt-20 relative">
         <div className="flex">
-          <button className="border px-5 py-3 text-sm font-bold">
+          <button className="border-b-2 border-r border-t border-l px-5 py-3 text-sm font-bold rounded-t-lg bg-gradient-to-r from-purple-900 via-indigo-800 to-blue-900 text-white">
             Description
           </button>
-          <button className="border px-5 py-3 text-sm">Reviews (122)</button>
+          <button className="border px-5 py-3 text-sm rounded-t-lg border-b-0 bg-white/80 backdrop-blur-sm hover:bg-white transition-colors">
+            Reviews (122)
+          </button>
         </div>
-        <div className="flex flex-col gap-4 border px-6 py-6 text-sm text-gray-500">
-          <p>{productData.description}</p>
-          <p>
+        <div className="flex flex-col gap-4 border px-6 py-6 text-sm text-gray-600 bg-white/80 backdrop-blur-sm rounded-lg rounded-tl-none shadow-lg shadow-purple-900/5">
+          <p className="leading-relaxed">{productData.description}</p>
+          <p className="leading-relaxed">
             {productData.longDescription ||
               "Additional product details and features will be listed here."}
           </p>

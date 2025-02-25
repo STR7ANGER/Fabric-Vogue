@@ -118,7 +118,6 @@ const ShopContextProvider = (props) => {
 
   const clearCart = () => {
     setCartItems({});
-    setAppliedCoupon(null);
   };
 
   const calculateOrderDetails = (currentCartItems) => {
