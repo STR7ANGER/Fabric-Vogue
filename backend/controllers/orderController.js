@@ -74,8 +74,6 @@ const placeOrderStripe = async (req, res) => {
     });
 
     res.json({ success: true, session_url: session.url });
-
-    await userModel.findByIdAndUpdate(userId, { cartData: {} });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -84,7 +82,7 @@ const placeOrderStripe = async (req, res) => {
 
 //verify stripe
 const verifyStripe = async (req, res) => {
-  const { orderId, success,userId } = req.body;
+  const { orderId, success, userId } = req.body;
   try {
     if (success === "true") {
       await orderModel.findByIdAndUpdate(orderId, { payment: true });
@@ -100,14 +98,7 @@ const verifyStripe = async (req, res) => {
   }
 };
 
-//RazorPay
-const placeOrderRazorpay = async (req, res) => {
-  try {
-  } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
-  }
-};
+
 
 //all orders for admin
 const allOrders = async (req, res) => {
@@ -146,10 +137,10 @@ const updateStatus = async (req, res) => {
 
 export {
   placeOrder,
-  placeOrderRazorpay,
+
   placeOrderStripe,
   allOrders,
   userOrders,
   updateStatus,
-  verifyStripe
+  verifyStripe,
 };

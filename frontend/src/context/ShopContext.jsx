@@ -210,8 +210,6 @@ const ShopContextProvider = (props) => {
         endpoint = `${backendUrl}/api/orders/place`;
       } else if (paymentMethod === "stripe") {
         endpoint = `${backendUrl}/api/orders/stripe`;
-      } else if (paymentMethod === "razorpay") {
-        endpoint = `${backendUrl}/api/orders/razorpay`;
       }
 
       const response = await axios.post(endpoint, requestData, {

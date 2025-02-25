@@ -7,7 +7,7 @@ import axios from "axios";
 import { useEffect } from "react";
 
 const Verify = () => {
-  const { token,clearCart, backendUrl } = useContext(ShopContext);
+  const { token, clearCart, backendUrl } = useContext(ShopContext);
   const [searchParams, setSearchParams] = useSearchParams();
   const success = searchParams.get("success");
   const orderId = searchParams.get("orderId");

@@ -62,8 +62,6 @@ const PlaceOrder = () => {
       let paymentMethodBackend;
       if (selectedPayment === "stripe") {
         paymentMethodBackend = "stripe";
-      } else if (selectedPayment === "razorpay") {
-        paymentMethodBackend = "razorpay";
       } else {
         paymentMethodBackend = "cod";
       }
@@ -246,22 +244,6 @@ const PlaceOrder = () => {
                 <img
                   src={assets.stripe_logo}
                   alt="Stripe"
-                  className="h-6 object-contain"
-                />
-              </label>
-
-              <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:border-blue-500">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="razorpay"
-                  checked={selectedPayment === "razorpay"}
-                  onChange={(e) => setSelectedPayment(e.target.value)}
-                  className="form-radio text-blue-600"
-                />
-                <img
-                  src={assets.razorpay_logo}
-                  alt="Razorpay"
                   className="h-6 object-contain"
                 />
               </label>
