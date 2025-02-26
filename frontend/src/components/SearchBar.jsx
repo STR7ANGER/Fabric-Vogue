@@ -1,49 +1,202 @@
 import React, { useContext, useState, useEffect } from "react";
 import { ShopContext } from "../context/ShopContext";
-import { assets } from "../assets/assets";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const SearchBar = () => {
-  const { search, setSearch, showSearch, setShowSearch } =
-    useContext(ShopContext);
-  const [visible, setVisible] = useState(false);
-  const nav = useNavigate();
+  const { showSearch, setShowSearch, products } = useContext(ShopContext);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const navigate = useNavigate();
 
+  // Close search on escape key
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        setShowSearch(false);
+        setSearchTerm("");
+      }
+    };
+
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [setShowSearch]);
+
+  // Prevent body scroll when search is open
   useEffect(() => {
     if (showSearch) {
-      nav("/collection");
-      setVisible(true);
+      document.body.style.overflow = "hidden";
     } else {
-      setVisible(false);
+      document.body.style.overflow = "auto";
     }
+
+    return () => {
+      document.body.style.overflow = "auto";
+    };
   }, [showSearch]);
 
-  return showSearch && visible ? (
-    <div className="border-t border-b mt-20 bg-gradient-to-r from-purple-900/5 via-indigo-800/5 to-blue-900/5 text-center backdrop-blur-sm shadow-md">
-      <div className="inline-flex items-center justify-center border border-purple-500/30 px-5 py-2 my-5 mx-3 rounded-full w-3/4 sm:w-1/2 bg-white/80 backdrop-blur-sm shadow-sm focus-within:shadow-lg focus-within:border-purple-500/50 transition-all duration-300">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 outline-none bg-transparent text-sm text-gray-700"
-          type="text"
-          placeholder="Search for products..."
-        />
-        <img
-          className="w-4 brightness-0 opacity-60"
-          src={assets.search_icon}
-          alt="Search Icon"
-        />
-      </div>
-      <div className="inline-flex items-center justify-center w-8 h-8 ml-2 rounded-full hover:bg-gray-200/80 transition-colors duration-200 cursor-pointer">
-        <img
-          onClick={() => setShowSearch(false)}
-          className="w-3 opacity-60"
-          src={assets.cross_icon}
-          alt="Close Icon"
-        />
+  // Filter products when search term changes
+  useEffect(() => {
+    if (searchTerm.trim() !== "") {
+      const filtered = products.filter((product) =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredProducts(filtered.slice(0, 5)); // Limit to 5 results
+    } else {
+      setFilteredProducts([]);
+    }
+  }, [searchTerm, products]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim() !== "") {
+      navigate(`/collection?search=${encodeURIComponent(searchTerm)}`);
+      setShowSearch(false);
+      setSearchTerm("");
+    }
+  };
+
+  if (!showSearch) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 bg-gray-900/80 backdrop-blur-sm">
+      <div className="w-full max-w-3xl mx-4 rounded-xl shadow-2xl border border-purple-900/30 relative">
+        {/* Close button */}
+        <button
+          onClick={() => {
+            setShowSearch(false);
+            setSearchTerm("");
+          }}
+          className="absolute -top-12 right-0 text-gray-300 hover:text-white transition-colors duration-300"
+          aria-label="Close search"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            className="w-6 h-6"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+
+        {/* Search form */}
+        <form
+          onSubmit={handleSearch}
+          className="flex items-center p-4 bg-gradient-to-r from-gray-900 via-purple-950 to-indigo-950 rounded-t-xl"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            className="w-5 h-5 text-gray-400"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search for products..."
+            className="w-full px-4 py-2 bg-transparent text-white placeholder-gray-500 focus:outline-none"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            autoFocus
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 bg-gradient-to-r from-violet-800 via-fuchsia-800 to-indigo-800 text-white rounded-lg text-sm font-medium shadow-lg shadow-purple-900/20 hover:shadow-purple-900/40 transition-all duration-300"
+          >
+            Search
+          </button>
+        </form>
+
+        {/* Search results */}
+        {filteredProducts.length > 0 && (
+          <div className="bg-gray-900 py-2 rounded-b-xl max-h-80 overflow-auto">
+            {filteredProducts.map((product) => (
+              <Link
+                key={product._id}
+                to={`/product/${product._id}`}
+                onClick={() => {
+                  setShowSearch(false);
+                  setSearchTerm("");
+                }}
+                className="flex items-center gap-4 p-3 hover:bg-gray-800 transition-colors duration-300"
+              >
+                <img
+                  src={product.image[0]}
+                  alt={product.name}
+                  className="w-12 h-12 object-cover rounded"
+                />
+                <div className="flex-1">
+                  <p className="text-gray-300 font-medium">{product.name}</p>
+                  <p className="text-sm text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400 font-semibold">
+                    ${product.price}
+                  </p>
+                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  className="w-4 h-4 text-gray-400"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </Link>
+            ))}
+
+            {filteredProducts.length > 0 && (
+              <div className="p-3 text-center border-t border-purple-900/30">
+                <Link
+                  to={`/collection?search=${encodeURIComponent(searchTerm)}`}
+                  onClick={() => {
+                    setShowSearch(false);
+                    setSearchTerm("");
+                  }}
+                  className="text-sm text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400 font-medium hover:underline"
+                >
+                  View all results
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+
+        {searchTerm.trim() !== "" && filteredProducts.length === 0 && (
+          <div className="bg-gray-900 p-6 text-center rounded-b-xl">
+            <p className="text-gray-400">
+              No products found matching "{searchTerm}"
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              Try a different search term or browse our collections
+            </p>
+          </div>
+        )}
       </div>
     </div>
-  ) : null;
+  );
 };
 
 export default SearchBar;

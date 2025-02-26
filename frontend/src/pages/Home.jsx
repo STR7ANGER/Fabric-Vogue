@@ -4,14 +4,15 @@ import LatestCollection from "../components/LatestCollection";
 import BestSeller from "../components/BestSeller";
 import OurPolicy from "../components/OurPolicy";
 import NewsletterBox from "../components/NewsletterBox";
+
 const Home = () => {
   return (
-    <div>
+    <div className="container mx-auto px-4">
       <Hero />
       <LatestCollection />
       <BestSeller />
-      <OurPolicy/>
-      <NewsletterBox/>
+      <OurPolicy />
+      <NewsletterBox />
     </div>
   );
 };
