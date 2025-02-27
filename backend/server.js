@@ -14,6 +14,24 @@ const port = process.env.port || 4000;
 connectDB();
 connectCloudinary();
 
+// Define allowed origins
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+];
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+};
+
 //middlewares
 app.use(express.json());
 app.use(cors());
