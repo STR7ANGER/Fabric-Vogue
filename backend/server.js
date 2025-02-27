@@ -18,6 +18,7 @@ connectCloudinary();
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
+  "https://fabric-vogue.netlify.app",
 ];
 const corsOptions = {
   origin: function (origin, callback) {
@@ -34,7 +35,7 @@ const corsOptions = {
 
 //middlewares
 app.use(express.json());
-app.use(cors());
+app.use(cors(corsOptions));
 
 //api endpoints
 app.use("/api/user", userRouter);
