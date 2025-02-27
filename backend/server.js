@@ -20,6 +20,7 @@ const allowedOrigins = [
   "http://localhost:5174",
   "https://fabric-vogue.netlify.app",
   "https://fabric-vogue.vercel.app",
+  "https://fabric-vogue-xais-projects-02d451ab.vercel.app",
 ];
 const corsOptions = {
   origin: function (origin, callback) {
