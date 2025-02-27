@@ -5,7 +5,7 @@ const About = () => {
   return (
     <div className="relative my-20 px-6">
       {/* Main section background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-r from-gray-900/80 via-purple-950/80 to-indigo-950/80 rounded-xl -m-4"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-gray-900/80 via-purple-950/80 to-indigo-950/80 rounded-xl -m-4  shadow-sm shadow-white"></div>
 
       {/* Background decorative elements */}
       <div className="absolute -right-16 top-1/4 w-80 h-80 bg-gradient-to-br from-violet-600/10 to-indigo-600/10 rounded-full blur-3xl -z-10"></div>

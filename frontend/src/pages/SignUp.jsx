@@ -54,7 +54,7 @@ const SignUp = () => {
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-[80vh] mt-20 px-4">
+    <div className="relative flex items-center justify-center min-h-[80vh] mt-20 px-4 ">
       {/* Background decorative elements */}
       <div className="absolute -right-16 top-1/4 w-80 h-80 bg-gradient-to-br from-violet-600/10 to-indigo-600/10 rounded-full blur-3xl -z-10"></div>
       <div className="absolute -left-16 bottom-1/4 w-80 h-80 bg-gradient-to-tl from-indigo-600/10 to-fuchsia-600/10 rounded-full blur-3xl -z-10"></div>

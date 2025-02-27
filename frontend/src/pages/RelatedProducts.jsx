@@ -69,13 +69,6 @@ const RelatedProducts = ({ category, subCategory, currentProductId }) => {
                 </span>
               </div>
             </div>
-
-            {/* Quick view button */}
-            <div className="absolute bottom-0 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 group-hover:bottom-4 transition-all duration-300">
-              <button className="bg-gradient-to-r from-violet-800 via-fuchsia-800 to-indigo-800 text-white text-xs font-medium py-2 px-4 rounded-full shadow-lg transition-all duration-300 hover:shadow-purple-900/30 hover:shadow-xl">
-                Quick View
-              </button>
-            </div>
           </div>
         ))}
       </div>

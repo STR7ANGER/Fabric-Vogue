@@ -14,7 +14,7 @@ const BestSeller = () => {
   }, [products]);
 
   return (
-    <div className="relative mt-20 mb-20 backdrop-blur-sm rounded-xl border border-purple-900/20 shadow-xl shadow-purple-900/10 px-6 py-10">
+    <div className="relative mt-20 mb-20 backdrop-blur-sm rounded-xl border border-purple-900/20 shadow-xl shadow-purple-900/10 px-6 py-10 ">
       {/* Main section background gradient */}
       <div className="absolute inset-0 bg-gradient-to-r from-indigo-950/80 via-purple-950/80 to-gray-900/80 rounded-xl"></div>
 
@@ -72,13 +72,6 @@ const BestSeller = () => {
                     ${item.price}
                   </span>
                 </div>
-              </div>
-
-              {/* Quick shop button */}
-              <div className="absolute bottom-0 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 group-hover:bottom-4 transition-all duration-300">
-                <button className="bg-gradient-to-r from-fuchsia-800 via-violet-800 to-indigo-800 text-white text-xs font-medium py-2 px-4 rounded-full shadow-lg transition-all duration-300 hover:shadow-purple-900/30 hover:shadow-xl">
-                  Quick Shop
-                </button>
               </div>
             </div>
           ))}

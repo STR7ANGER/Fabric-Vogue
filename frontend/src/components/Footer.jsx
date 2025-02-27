@@ -14,7 +14,7 @@ const Footer = () => {
                 <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-indigo-600 rounded-lg blur opacity-40 group-hover:opacity-80 transition-opacity duration-300"></div>
                 <img
                   src={assets.logo}
-                  className="w-36 relative transition-all duration-300 group-hover:scale-105"
+                  className="w-36 ml-8 relative transition-all duration-300 group-hover:scale-105"
                   alt="Shop Logo"
                 />
               </div>

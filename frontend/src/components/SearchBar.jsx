@@ -58,7 +58,7 @@ const SearchBar = () => {
   if (!showSearch) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 bg-gray-900/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-gray-900/80 backdrop-blur-sm">
       <div className="w-full max-w-3xl mx-4 rounded-xl shadow-2xl border border-purple-900/30 relative">
         {/* Close button */}
         <button

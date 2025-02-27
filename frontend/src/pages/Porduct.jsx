@@ -86,7 +86,7 @@ const Product = () => {
   }
 
   return (
-    <div className="relative px-4 mb-10 mt-20 sm:px-8 py-16 transition-opacity ease-in duration-500 opacity-100">
+    <div className="relative px-4 mb-10 mt-8 sm:px-8 py-16 transition-opacity ease-in duration-500 opacity-100 shadow-sm shadow-white rounded-lg">
       {/* Background decorative elements */}
       <div className="absolute inset-0 bg-gradient-to-r from-gray-900/80 via-purple-950/80 to-indigo-950/80 rounded-xl"></div>
       <div className="absolute -right-16 top-1/4 w-80 h-80 bg-gradient-to-br from-violet-600/10 to-indigo-600/10 rounded-full blur-3xl -z-10"></div>

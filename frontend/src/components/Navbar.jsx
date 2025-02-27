@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect } from "react";
 import { assets } from "../assets/assets.js";
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext.jsx";
+import { Search, User, ShoppingCart, Menu, ArrowLeft } from "lucide-react";
 
 const Navbar = () => {
   const [visible, setVisible] = useState(false);
@@ -54,7 +55,7 @@ const Navbar = () => {
       }`}
     >
       {/* Dark gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-slate-900 to-purple-900 shadow-lg"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-slate-900 to-purple-900 shadow-lg shadow-purple-900 "></div>
 
       {/* Content container */}
       <div className="relative w-full px-6 font-medium text-gray-300 max-w-7xl mx-auto">
@@ -158,33 +159,21 @@ const Navbar = () => {
               className="focus:outline-none text-gray-300 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-violet-400 hover:via-fuchsia-400 hover:to-indigo-400 transition-all duration-300 hover:scale-110 relative after:absolute after:bg-gradient-to-r after:from-violet-900/20 after:to-purple-900/20 after:w-0 after:h-0 after:rounded-full after:transition-all after:duration-300 hover:after:w-10 hover:after:h-10 after:-left-3 after:-top-3 after:-z-10 after:opacity-0 hover:after:opacity-100"
               aria-label="Search"
             >
-              <img
-                src={assets.search_icon}
-                className="w-5 cursor-pointer"
-                alt="Search"
-              />
+              <Search size={20} className="text-white" />
             </button>
 
             {/* Profile Dropdown */}
             <div className="group relative">
               {isLoggedIn ? (
                 <button className="focus:outline-none text-gray-300 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-violet-400 hover:via-fuchsia-400 hover:to-indigo-400 transition-all duration-300 hover:scale-110 relative after:absolute after:bg-gradient-to-r after:from-violet-900/20 after:to-purple-900/20 after:w-0 after:h-0 after:rounded-full after:transition-all after:duration-300 hover:after:w-10 hover:after:h-10 after:-left-3 after:-top-3 after:-z-10 after:opacity-0 hover:after:opacity-100">
-                  <img
-                    className="w-5 cursor-pointer"
-                    src={assets.profile_icon}
-                    alt="Profile"
-                  />
+                  <User size={20} className="text-white" />
                 </button>
               ) : (
                 <Link
                   to="/login"
                   className="text-gray-300 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-violet-400 hover:via-fuchsia-400 hover:to-indigo-400 transition-all duration-300 hover:scale-110 relative after:absolute after:bg-gradient-to-r after:from-violet-900/20 after:to-purple-900/20 after:w-0 after:h-0 after:rounded-full after:transition-all after:duration-300 hover:after:w-10 hover:after:h-10 after:-left-3 after:-top-3 after:-z-10 after:opacity-0 hover:after:opacity-100"
                 >
-                  <img
-                    className="w-5 cursor-pointer"
-                    src={assets.profile_icon}
-                    alt="Login"
-                  />
+                  <User size={20} className="text-white" />
                 </Link>
               )}
 
@@ -219,7 +208,7 @@ const Navbar = () => {
               className="relative text-gray-300 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-violet-400 hover:via-fuchsia-400 hover:to-indigo-400 transition-all duration-300 hover:scale-110 after:absolute after:bg-gradient-to-r after:from-violet-900/20 after:to-purple-900/20 after:w-0 after:h-0 after:rounded-full after:transition-all after:duration-300 hover:after:w-10 hover:after:h-10 after:-left-3 after:-top-3 after:-z-10 after:opacity-0 hover:after:opacity-100"
               aria-label={`Cart with ${getCartCount()} items`}
             >
-              <img src={assets.cart_icon} className="w-5 min-w-5" alt="" />
+              <ShoppingCart size={20} className="text-white" />
               {getCartCount() > 0 && (
                 <div className="absolute -right-1 -bottom-1 flex items-center justify-center w-5 h-5 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-indigo-600 text-white rounded-full text-[9px] font-bold shadow-md">
                   {getCartCount()}
@@ -233,11 +222,7 @@ const Navbar = () => {
               className="focus:outline-none sm:hidden text-gray-300 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-violet-400 hover:via-fuchsia-400 hover:to-indigo-400 transition-all duration-300 hover:scale-110 relative after:absolute after:bg-gradient-to-r after:from-violet-900/20 after:to-purple-900/20 after:w-0 after:h-0 after:rounded-full after:transition-all after:duration-300 hover:after:w-10 hover:after:h-10 after:-left-3 after:-top-3 after:-z-10 after:opacity-0 hover:after:opacity-100"
               aria-label="Menu"
             >
-              <img
-                src={assets.menu_icon}
-                className="w-5 cursor-pointer"
-                alt="Menu"
-              />
+              <Menu size={20} className="text-white" />
             </button>
           </div>
         </div>
@@ -262,11 +247,7 @@ const Navbar = () => {
               onClick={() => setVisible(false)}
               className="flex items-center gap-4 p-5 cursor-pointer border-b border-purple-900/30"
             >
-              <img
-                className="h-4 rotate-180"
-                src={assets.dropdown_icon}
-                alt=""
-              />
+              <ArrowLeft size={16} className="text-white" />
               <p className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-indigo-400 font-medium">
                 Close Menu
               </p>
